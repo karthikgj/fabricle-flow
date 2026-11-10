@@ -1,4 +1,4 @@
-
+import DashboardStockSummary from "./components/DashboardStockSummary";
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -26,14 +26,12 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Package,
   PackageCheck,
   RefreshCw,
   Settings,
   Truck,
   Users,
   Wallet,
-  Wheat,
   X,
 } from "lucide-react";
 
@@ -118,9 +116,7 @@ const navigation: NavItem[] = [
     icon: Truck,
     description: "Manage yarn deliveries, fabric deliveries and challans",
     children: [
-      { name: "Yarn Delivery", path: "/delivery/yarn" },
-      { name: "Fabric Delivery", path: "/delivery/fabric" },
-      { name: "Delivery Challans", path: "/delivery/challans" },
+      { name: "Delivery", path: "/delivery" },
     ],
   },
   {
@@ -147,12 +143,6 @@ const navigation: NavItem[] = [
     icon: Settings,
     description: "Company profile, document numbering, users and permissions",
   },
-];
-
-const quickStats = [
-  { label: "Yarn Stock", icon: Wheat, color: "green" },
-  { label: "Fabric Stock", icon: Package, color: "blue" },
-  { label: "Open Job Orders", icon: ClipboardList, color: "orange" },
 ];
 
 function formatDate(date: Date) {
@@ -187,6 +177,7 @@ function Dashboard() {
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [refreshing, setRefreshing] = useState(false);
+  const [stockRefreshKey, setStockRefreshKey] = useState(0);
   const { company, loading: companyLoading } = useCompany();
 
   function setToday() {
@@ -202,6 +193,7 @@ function Dashboard() {
   }
 
   function refreshDashboard() {
+    setStockRefreshKey((value) => value + 1);
     setRefreshing(true);
     window.setTimeout(() => setRefreshing(false), 350);
   }
@@ -291,36 +283,7 @@ function Dashboard() {
         </div>
       </section>
 
-      <section className="dashboard-section">
-        <div className="section-title-row">
-          <div>
-            <h2>Current Stock</h2>
-            <p>Stock balances will appear when the inventory data is connected.</p>
-          </div>
-          <Link to="/inventory/stock" className="text-link">
-            View stock <ArrowRight size={15} />
-          </Link>
-        </div>
-
-        <div className="stats-grid">
-          {quickStats.map((stat) => {
-            const Icon = stat.icon;
-
-            return (
-              <article className="stat-card" key={stat.label}>
-                <div className={`stat-icon ${stat.color}`}>
-                  <Icon size={21} />
-                </div>
-                <div className="stat-content">
-                  <span className="stat-label">{stat.label}</span>
-                  <strong className="stat-value">—</strong>
-                  <span className="stat-footnote">Awaiting connected data</span>
-                </div>
-              </article>
-            );
-          })}
-        </div>
-      </section>
+      <DashboardStockSummary key={stockRefreshKey} />
 
       <section className="dashboard-section">
         <div className="section-title-row">
@@ -402,11 +365,10 @@ function Dashboard() {
           <Activity size={19} />
         </div>
         <div>
-          <strong>Dashboard layout is ready</strong>
+          <strong>Inventory connected to the dashboard</strong>
           <p>
-            Live inventory and transaction records are not connected yet.
-            Stock figures will appear after the database queries and access
-            rules have been implemented and verified.
+            Current Stock is loaded from the stock ledger. Activity cards are
+            navigation shortcuts; their live transaction summaries are not yet connected.
           </p>
         </div>
       </section>
@@ -826,7 +788,7 @@ function AppLayout() {
             
 {navigation
   .filter(
-    (item) => item.path !== "/" && item.path !== "/reports" && item.path !== "/settings"
+    (item) => item.path !== "/" && item.path !== "/reports" && item.path !== "/settings" && item.path !== "/delivery"
   )
   .map((item) => (
     <Route
