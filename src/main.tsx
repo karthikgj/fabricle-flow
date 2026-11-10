@@ -1,36 +1,888 @@
-import React from 'react';
-import { createRoot } from 'react-dom/client';
-import './styles.css';
 
-const modules = [
-  { name: 'Inventory', description: 'Items, lots, locations and stock ledger', icon: '▦' },
-  { name: 'Purchases', description: 'Goods receipts and supplier records', icon: '↓' },
-  { name: 'Production', description: 'BOMs, work orders and consumption', icon: '⌘' },
-  { name: 'Deliveries', description: 'Dispatches and customer transactions', icon: '↑' },
-  { name: 'Payments', description: 'Receipts, supplier payments and balances', icon: '₹' },
-  { name: 'Reports', description: 'Stock, production and outstanding summaries', icon: '▤' },
+import React, { useState } from "react";
+import { createRoot } from "react-dom/client";
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from "react-router-dom";
+import {
+  Activity,
+  ArrowDownToLine,
+  ArrowRight,
+  BarChart3,
+  Boxes,
+  CalendarDays,
+  ChevronDown,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  Factory,
+  FileCheck,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  Menu,
+  Package,
+  PackageCheck,
+  RefreshCw,
+  Settings,
+  Truck,
+  Users,
+  Wallet,
+  Wheat,
+  X,
+} from "lucide-react";
+
+import "./styles.css";
+import { AuthProvider, useAuthContext } from "./hooks/AuthContext";
+import AuthGate from "./components/layout/AuthGate";
+import { useCompany } from "./hooks/useCompany";
+import Parties from "./pages/Parties";
+import Items from "./pages/Items";
+import Units from "./pages/Units";
+import Locations from "./pages/Locations";
+import Lots from "./pages/Lots";
+import BOMs from "./pages/BOMs";
+import GRNs from "./pages/GoodsReceipts";
+import CurrentStock from "./pages/CurrentStock";
+import StockAdjustments from "./pages/StockAdjustments";
+import StockLedger from "./pages/StockLedger";
+import Production from "./pages/Production";
+import FabricStock from "./pages/FabricStock";
+import Delivery from "./pages/Delivery";
+import Invoices from "./pages/Invoices";
+import Payments from "./pages/Payments";
+import Reports from "./pages/Reports";
+import OrganisationSettings from "./pages/Settings";
+
+type NavChild = {
+  name: string;
+  path: string;
+};
+
+type NavItem = {
+  name: string;
+  path: string;
+  icon: React.ElementType;
+  description: string;
+  children?: NavChild[];
+};
+
+const navigation: NavItem[] = [
+  {
+    name: "Dashboard",
+    path: "/",
+    icon: LayoutDashboard,
+    description: "Stock, activity and production overview",
+  },
+  {
+    name: "Masters",
+    path: "/masters",
+    icon: Users,
+    description: "Manage the basic records used throughout your business",
+    children: [
+      { name: "Parties", path: "/masters/parties" },
+      { name: "Items", path: "/masters/items" },
+      { name: "Units", path: "/masters/units" },
+      { name: "Locations", path: "/masters/locations" },
+      { name: "Lots", path: "/masters/lots" },
+      { name: "Bill of Materials", path: "/masters/boms" },
+    ],
+  },
+  {
+    name: "Inventory",
+    path: "/inventory",
+    icon: Boxes,
+    description: "Track customer-supplied yarn and produced fabric",
+    children: [
+      { name: "Yarn Receipts / GRN", path: "/inventory/receipts" },
+      { name: "Current Stock", path: "/inventory/stock" },
+      { name: "Stock Adjustments", path: "/inventory/adjustments" },
+      { name: "Stock Ledger", path: "/inventory/ledger" },
+      { name: "Fabric Stock", path: "/inventory/fabric-stock" },
+    ],
+  },
+  {
+    name: "Production",
+    path: "/production",
+    icon: Factory,
+    description: "Record production, calculate yarn consumption and update fabric stock",
+  },
+  {
+    name: "Delivery",
+    path: "/delivery",
+    icon: Truck,
+    description: "Manage yarn deliveries, fabric deliveries and challans",
+    children: [
+      { name: "Yarn Delivery", path: "/delivery/yarn" },
+      { name: "Fabric Delivery", path: "/delivery/fabric" },
+      { name: "Delivery Challans", path: "/delivery/challans" },
+    ],
+  },
+  {
+    name: "Invoices",
+    path: "/invoices",
+    icon: FileText,
+    description: "Manage job-work bills and processing-charge invoices",
+  },
+  {
+    name: "Payments",
+    path: "/payments",
+    icon: Wallet,
+    description: "Manage receipts, advances, allocations and payments",
+  },
+  {
+    name: "Reports",
+    path: "/reports",
+    icon: BarChart3,
+    description: "Review stock, production, deliveries and outstanding balances", 
+  },
+  {
+    name: "Settings",
+    path: "/settings",
+    icon: Settings,
+    description: "Company profile, document numbering, users and permissions",
+  },
 ];
 
-function App() {
+const quickStats = [
+  { label: "Yarn Stock", icon: Wheat, color: "green" },
+  { label: "Fabric Stock", icon: Package, color: "blue" },
+  { label: "Open Job Orders", icon: ClipboardList, color: "orange" },
+];
+
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function PageHeader({
+  title,
+  subtitle,
+  action,
+}: {
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+}) {
   return (
-    <main className="shell">
-      <aside className="sidebar">
-        <div className="brand-mark">F</div>
-        <div className="brand-name">Fabricle<span>Flow</span></div>
-        <div className="side-label">WORKSPACE</div>
-        <div className="nav-item active">◫ <span>Overview</span></div>
-        {modules.map((module) => <div className="nav-item" key={module.name}>{module.icon} <span>{module.name}</span></div>)}
-        <div className="sidebar-bottom"><div className="avatar">FF</div><div><strong>Workspace</strong><small>Company setup pending</small></div></div>
-      </aside>
-      <section className="content">
-        <header className="topbar"><div><div className="eyebrow">KNITTING OPERATIONS</div><h1>Good morning</h1><p>Your operations workspace, ready to be configured.</p></div><button className="primary" disabled>Set up company <span>↗</span></button></header>
-        <section className="welcome-card"><div className="welcome-copy"><div className="pill">NEW WORKSPACE</div><h2>One clear view of your<br/>knitting business.</h2><p>Manage materials, stock, production, deliveries and payments in one connected workspace.</p><div className="progress-row"><div className="progress-track"><div className="progress-fill" /></div><span>Setup not started</span></div></div><div className="orb orb-one"/><div className="orb orb-two"/><div className="thread-art">↗<br/>↘<br/>↗</div></section>
-        <div className="section-heading"><div><div className="eyebrow">YOUR WORKSPACE</div><h2>Operations</h2></div><span className="muted">6 modules planned</span></div>
-        <div className="module-grid">{modules.map((module, i) => <article className="module-card" key={module.name}><div className={`module-icon tone-${i}`}>{module.icon}</div><div className="module-title-row"><h3>{module.name}</h3><span className="arrow">↗</span></div><p>{module.description}</p><span className="status">Planned</span></article>)}</div>
-        <footer>FABRICLE FLOW <span>•</span> INITIAL PROJECT SCAFFOLD</footer>
-      </section>
-    </main>
+    <header className="page-header">
+      <div className="page-heading">
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+      {action && <div className="page-actions">{action}</div>}
+    </header>
   );
 }
 
-createRoot(document.getElementById('root')!).render(<React.StrictMode><App /></React.StrictMode>);
+function Dashboard() {
+  const today = formatDate(new Date());
+  const [fromDate, setFromDate] = useState(today);
+  const [toDate, setToDate] = useState(today);
+  const [refreshing, setRefreshing] = useState(false);
+  const { company, loading: companyLoading } = useCompany();
+
+  function setToday() {
+    const date = formatDate(new Date());
+    setFromDate(date);
+    setToDate(date);
+  }
+
+  function setThisMonth() {
+    const now = new Date();
+    setFromDate(formatDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+    setToDate(formatDate(now));
+  }
+
+  function refreshDashboard() {
+    setRefreshing(true);
+    window.setTimeout(() => setRefreshing(false), 350);
+  }
+
+  return (
+    <>
+      <PageHeader
+        title="Dashboard"
+        subtitle="Your knitting job-work business at a glance."
+        action={
+          <button
+            type="button"
+            className="button button-outline"
+            onClick={refreshDashboard}
+          >
+            <RefreshCw size={16} className={refreshing ? "spin" : ""} />
+            Refresh
+          </button>
+        }
+      />
+
+      <section className="company-strip">
+        <div className="company-symbol">
+          <Factory size={21} />
+        </div>
+
+        <div>
+          <span className="eyebrow">COMPANY WORKSPACE</span>
+          <strong>
+            {companyLoading
+              ? "Loading organisation..."
+              : company?.name ?? "Organisation unavailable"}
+          </strong>
+          <span className="text-muted">Inventory &amp; Production</span>
+        </div>
+
+        <span className="connection-status">
+          <span className="status-dot" />
+          {companyLoading ? "Loading" : "Organisation connected"}
+        </span>
+      </section>
+
+      <section className="panel date-panel">
+        <div className="date-field">
+          <label htmlFor="from-date">From Date</label>
+          <div className="date-input-wrap">
+            <CalendarDays size={17} />
+            <input
+              id="from-date"
+              type="date"
+              value={fromDate}
+              max={toDate}
+              onChange={(event) => setFromDate(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="date-field">
+          <label htmlFor="to-date">To Date</label>
+          <div className="date-input-wrap">
+            <CalendarDays size={17} />
+            <input
+              id="to-date"
+              type="date"
+              value={toDate}
+              min={fromDate}
+              onChange={(event) => setToDate(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="date-shortcuts">
+          <button
+            type="button"
+            className="button button-outline"
+            onClick={setToday}
+          >
+            Today
+          </button>
+          <button
+            type="button"
+            className="button button-outline"
+            onClick={setThisMonth}
+          >
+            This Month
+          </button>
+        </div>
+      </section>
+
+      <section className="dashboard-section">
+        <div className="section-title-row">
+          <div>
+            <h2>Current Stock</h2>
+            <p>Stock balances will appear when the inventory data is connected.</p>
+          </div>
+          <Link to="/inventory/stock" className="text-link">
+            View stock <ArrowRight size={15} />
+          </Link>
+        </div>
+
+        <div className="stats-grid">
+          {quickStats.map((stat) => {
+            const Icon = stat.icon;
+
+            return (
+              <article className="stat-card" key={stat.label}>
+                <div className={`stat-icon ${stat.color}`}>
+                  <Icon size={21} />
+                </div>
+                <div className="stat-content">
+                  <span className="stat-label">{stat.label}</span>
+                  <strong className="stat-value">—</strong>
+                  <span className="stat-footnote">Awaiting connected data</span>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="dashboard-section">
+        <div className="section-title-row">
+          <div>
+            <h2>Activity</h2>
+            <p>Transactions for the selected date range.</p>
+          </div>
+          <span className="date-range-label">
+            {fromDate} — {toDate}
+          </span>
+        </div>
+
+        <div className="activity-grid">
+          <ActivityCard
+            title="Yarn Receipts"
+            description="Customer-supplied yarn received"
+            icon={ArrowDownToLine}
+            path="/inventory/receipts"
+          />
+          <ActivityCard
+            title="Production"
+            description="Record yarn consumption and fabric output"
+            icon={Factory}
+            path="/production"
+          />
+          <ActivityCard
+            title="Fabric Deliveries"
+            description="Finished fabric sent to customers"
+            icon={Truck}
+            path="/delivery/fabric"
+          />
+          <ActivityCard
+            title="Invoices & Payments"
+            description="Billing and payment activity"
+            icon={CreditCard}
+            path="/invoices"
+          />
+        </div>
+      </section>
+
+      <section className="dashboard-section">
+        <div className="section-title-row">
+          <div>
+            <h2>Process Analysis</h2>
+            <p>Follow the material flow through your job-work process.</p>
+          </div>
+        </div>
+
+        <div className="process-flow">
+          <ProcessStep
+            number="01"
+            title="Yarn Receipt"
+            description="Record yarn received from the customer"
+            icon={PackageCheck}
+          />
+          <div className="process-connector">
+            <ArrowRight size={18} />
+          </div>
+          <ProcessStep
+            number="02"
+            title="Production"
+            description="Record yarn consumption and fabric output"
+            icon={Factory}
+          />
+          <div className="process-connector">
+            <ArrowRight size={18} />
+          </div>
+          <ProcessStep
+            number="03"
+            title="Fabric Delivery"
+            description="Return finished fabric with a challan"
+            icon={Truck}
+          />
+        </div>
+      </section>
+
+      <section className="notice-panel">
+        <div className="notice-icon">
+          <Activity size={19} />
+        </div>
+        <div>
+          <strong>Dashboard layout is ready</strong>
+          <p>
+            Live inventory and transaction records are not connected yet.
+            Stock figures will appear after the database queries and access
+            rules have been implemented and verified.
+          </p>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function ActivityCard({
+  title,
+  description,
+  icon: Icon,
+  path,
+}: {
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  path: string;
+}) {
+  return (
+    <Link to={path} className="activity-card">
+      <div className="activity-card-top">
+        <div className="activity-icon">
+          <Icon size={19} />
+        </div>
+        <ArrowRight size={16} className="activity-arrow" />
+      </div>
+      <strong>{title}</strong>
+      <span>{description}</span>
+      <div className="activity-empty">Live activity not connected</div>
+    </Link>
+  );
+}
+
+function ProcessStep({
+  number,
+  title,
+  description,
+  icon: Icon,
+}: {
+  number: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+}) {
+  return (
+    <div className="process-step">
+      <div className="process-step-heading">
+        <span>{number}</span>
+        <Icon size={19} />
+      </div>
+      <strong>{title}</strong>
+      <p>{description}</p>
+    </div>
+  );
+}
+
+function ModulePage({ module }: { module: NavItem }) {
+  const [search, setSearch] = useState("");
+  const Icon = module.icon;
+
+  const children = module.children?.filter((child) =>
+    child.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <>
+      <PageHeader title={module.name} subtitle={module.description} />
+
+      <section className="module-intro panel">
+        <div className="module-intro-icon">
+          <Icon size={25} />
+        </div>
+        <div>
+          <span className="eyebrow">FABRICLE FLOW WORKSPACE</span>
+          <h2>{module.name}</h2>
+          <p>{module.description}.</p>
+        </div>
+      </section>
+
+      {module.children && (
+        <section className="dashboard-section">
+          <div className="section-title-row">
+            <div>
+              <h2>{module.name} workspace</h2>
+              <p>Choose a page to continue.</p>
+            </div>
+
+            <div className="search-box">
+              <input
+                aria-label={`Search ${module.name} pages`}
+                placeholder="Find a page..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="page-links-grid">
+            {children?.map((child) => (
+              <Link
+                to={child.path}
+                className="page-link-card"
+                key={child.path}
+              >
+                <div className="page-link-icon">
+                  <FileCheck size={19} />
+                </div>
+                <div>
+                  <strong>{child.name}</strong>
+                  <span>Open {child.name.toLowerCase()}</span>
+                </div>
+                <ChevronRight size={18} />
+              </Link>
+            ))}
+
+            {children?.length === 0 && (
+              <div className="empty-state">No pages match your search.</div>
+            )}
+          </div>
+        </section>
+      )}
+
+      <section className="empty-workspace panel">
+        <div className="empty-state-icon">
+          <ClipboardList size={25} />
+        </div>
+        <h3>{module.name} screens will be connected here</h3>
+        <p>
+          The navigation is ready, but the business forms, validations,
+          permissions and database operations still need to be implemented.
+        </p>
+        <Link to="/" className="button button-outline">
+          Back to Dashboard <ArrowRight size={15} />
+        </Link>
+      </section>
+    </>
+  );
+}
+
+function Sidebar({
+  mobileOpen,
+  closeMobile,
+}: {
+  mobileOpen: boolean;
+  closeMobile: () => void;
+}) {
+  const location = useLocation();
+  const [expanded, setExpanded] = useState<string[]>(["Masters", "Inventory"]);
+
+  function toggleSection(name: string) {
+    setExpanded((current) =>
+      current.includes(name)
+        ? current.filter((item) => item !== name)
+        : [...current, name]
+    );
+  }
+
+  return (
+    <>
+      {mobileOpen && (
+        <button
+          className="mobile-overlay"
+          aria-label="Close menu"
+          onClick={closeMobile}
+        />
+      )}
+
+      <aside className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
+        <div className="brand-area">
+          <Link to="/" className="brand-link" onClick={closeMobile}>
+            <img
+              className="brand-logo"
+              src="/logo.svg"
+              alt="Fabricle Flow logo"
+            />
+            <span className="brand-text">
+              <strong>Fabricle Flow</strong>
+              <small>Inventory &amp; Production</small>
+            </span>
+          </Link>
+
+          <button
+            className="mobile-close"
+            aria-label="Close navigation"
+            onClick={closeMobile}
+          >
+            <X size={19} />
+          </button>
+        </div>
+
+        <div className="sidebar-label">WORKSPACE</div>
+
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const active =
+              item.path === "/"
+                ? location.pathname === "/"
+                : location.pathname === item.path ||
+                  location.pathname.startsWith(`${item.path}/`);
+
+            const isExpanded = expanded.includes(item.name);
+
+            return (
+              <div className="nav-group" key={item.path}>
+                {item.children ? (
+                  <button
+                    type="button"
+                    className={`nav-item ${active ? "active" : ""}`}
+                    onClick={() => toggleSection(item.name)}
+                    aria-expanded={isExpanded}
+                  >
+                    <Icon size={18} />
+                    <span>{item.name}</span>
+                    {isExpanded ? (
+                      <ChevronDown className="nav-chevron" size={15} />
+                    ) : (
+                      <ChevronRight className="nav-chevron" size={15} />
+                    )}
+                  </button>
+                ) : (
+                  <Link
+                    to={item.path}
+                    onClick={closeMobile}
+                    className={`nav-item ${active ? "active" : ""}`}
+                  >
+                    <Icon size={18} />
+                    <span>{item.name}</span>
+                  </Link>
+                )}
+
+                {item.children && isExpanded && (
+                  <div className="nav-children">
+                    {item.children.map((child) => (
+                      <Link
+                        to={child.path}
+                        key={child.path}
+                        onClick={closeMobile}
+                        className={`nav-child ${
+                          location.pathname === child.path ? "active" : ""
+                        }`}
+                      >
+                        <span className="nav-child-dot" />
+                        {child.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-footer-icon">
+            <Settings size={17} />
+          </div>
+          <div>
+            <strong>Fabricle Flow</strong>
+            <small>Knitting job-work ERP</small>
+          </div>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function AppLayout() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
+
+  const location = useLocation();
+  const { company, loading: companyLoading, error: companyError } = useCompany();
+  const { user, signOut } = useAuthContext();
+
+  const activeModule = navigation.find((item) =>
+    item.path === "/"
+      ? location.pathname === "/"
+      : location.pathname === item.path ||
+        location.pathname.startsWith(`${item.path}/`)
+  );
+
+  async function handleSignOut() {
+    setSigningOut(true);
+    setSignOutError("");
+
+    try {
+      await signOut();
+      setUserMenuOpen(false);
+    } catch (error) {
+      setSignOutError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out. Please try again."
+      );
+    } finally {
+      setSigningOut(false);
+    }
+  }
+
+  return (
+    <div className="app-shell">
+      <Sidebar
+        mobileOpen={mobileOpen}
+        closeMobile={() => setMobileOpen(false)}
+      />
+
+      <div className="main-area">
+        <header className="topbar">
+          <button
+            type="button"
+            className="mobile-menu-button"
+            aria-label="Open navigation"
+            onClick={() => setMobileOpen(true)}
+          >
+            <Menu size={21} />
+          </button>
+
+          <div className="topbar-context">
+            <span className="topbar-context-icon">
+              <LayoutDashboard size={17} />
+            </span>
+            <span>
+              {companyLoading
+                ? "Loading..."
+                : company?.name ?? "Organisation unavailable"}
+            </span>
+
+            {location.pathname !== "/" && (
+              <>
+                <ChevronRight size={14} className="breadcrumb-chevron" />
+                <span className="breadcrumb-current">
+                  {activeModule?.name ?? "Workspace"}
+                </span>
+              </>
+            )}
+          </div>
+
+          <div className="topbar-right">
+            <span className="connection-status">
+              <span className="status-dot" />
+              {companyError
+                ? "Connection issue"
+                : companyLoading
+                  ? "Loading"
+                  : "Organisation connected"}
+            </span>
+
+            <div className="user-menu">
+              <button
+                type="button"
+                className="user-avatar"
+                title={user?.email ?? "Account"}
+                aria-label="Open account menu"
+                aria-expanded={userMenuOpen}
+                onClick={() => setUserMenuOpen((open) => !open)}
+              >
+                {(user?.email?.charAt(0) || "U").toUpperCase()}
+              </button>
+
+              {userMenuOpen && (
+                <div className="user-menu-panel">
+                  <strong>
+                    {user?.user_metadata?.full_name || "Your account"}
+                  </strong>
+                  <span>{user?.email}</span>
+
+                  {signOutError && (
+                    <p className="auth-message" role="alert">
+                      {signOutError}
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    className="user-menu-signout"
+                    disabled={signingOut}
+                    onClick={() => void handleSignOut()}
+                  >
+                    <LogOut size={16} />
+                    {signingOut ? "Signing out..." : "Sign out"}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </header>
+
+        <main className="page-content">
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+
+            {/* Implemented master and inventory pages */}
+            <Route path="/masters/parties" element={<Parties />} />
+            <Route path="/masters/items" element={<Items />} />
+            <Route path="/masters/units" element={<Units />} />
+            <Route path="/masters/locations" element={<Locations />} />
+            <Route path="/masters/lots" element={<Lots />} />
+            <Route path="/masters/boms" element={<BOMs />} />
+            <Route path="/inventory/receipts" element={<GRNs />} />
+            <Route path="/inventory/stock" element={<CurrentStock />} />
+            <Route path="/inventory/adjustments" element={<StockAdjustments />} />
+            <Route path="/inventory/ledger" element={<StockLedger />} />
+            <Route path="/inventory/fabric-stock" element={<FabricStock />} />
+            <Route path="/production" element={<Production />} />
+            <Route path="/delivery" element={<Delivery />} />
+            <Route path="/delivery/yarn" element={<Delivery />} />
+            <Route path="/delivery/fabric" element={<Delivery />} />
+            <Route path="/delivery/challans" element={<Delivery />} />
+            <Route path="/invoices" element={<Invoices />} />
+            <Route path="/payments" element={<Payments />} />
+            <Route path="/reports/*" element={<Reports />} />
+            <Route path="/settings" element={<OrganisationSettings />} />
+
+            
+{navigation
+  .filter(
+    (item) => item.path !== "/" && item.path !== "/reports" && item.path !== "/settings"
+  )
+  .map((item) => (
+    <Route
+      key={item.path}
+      path={item.path}
+      element={<ModulePage module={item} />}
+    />
+  ))}
+
+
+            {navigation.flatMap((item) =>
+              (item.children ?? [])
+                .filter((child) => child.path !== "/inventory/receipts")
+                .map((child) => (
+                  <Route
+                    key={child.path}
+                    path={child.path}
+                    element={
+                      <ModulePage
+                        module={{
+                          name: child.name,
+                          path: child.path,
+                          icon: item.icon,
+                          description: `${child.name} for knitting job-work operations`,
+                        }}
+                      />
+                    }
+                  />
+                ))
+            )}
+
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+
+          <footer className="app-footer">
+          </footer>
+        </main>
+      </div>
+    </div>
+  );
+}
+
+function AuthenticatedApp() {
+  return (
+    <AuthGate>
+      <AppLayout />
+    </AuthGate>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <AuthProvider>
+        <AuthenticatedApp />
+      </AuthProvider>
+    </BrowserRouter>
+  </React.StrictMode>
+);
