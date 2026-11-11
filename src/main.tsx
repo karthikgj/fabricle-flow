@@ -1,4 +1,5 @@
 import DashboardStockSummary from "./components/DashboardStockSummary";
+import DashboardCharts from "./components/DashboardCharts";
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -24,7 +25,6 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  PackageCheck,
   RefreshCw,
   Settings,
   Truck,
@@ -324,41 +324,7 @@ function Dashboard() {
         </div>
       </section>
 
-      <section className="dashboard-section">
-        <div className="section-title-row">
-          <div>
-            <h2>Process Analysis</h2>
-            <p>Follow the material flow through your job-work process.</p>
-          </div>
-        </div>
-
-        <div className="process-flow">
-          <ProcessStep
-            number="01"
-            title="Yarn Receipt"
-            description="Record yarn received from the customer"
-            icon={PackageCheck}
-          />
-          <div className="process-connector">
-            <ArrowRight size={18} />
-          </div>
-          <ProcessStep
-            number="02"
-            title="Production"
-            description="Record yarn consumption and fabric output"
-            icon={Factory}
-          />
-          <div className="process-connector">
-            <ArrowRight size={18} />
-          </div>
-          <ProcessStep
-            number="03"
-            title="Fabric Delivery"
-            description="Return finished fabric with a challan"
-            icon={Truck}
-          />
-        </div>
-      </section>
+      <DashboardCharts refreshKey={stockRefreshKey} />
 
     </>
   );
@@ -395,29 +361,6 @@ function ActivityCard({
         {loading ? "Loading…" : error ? "Count unavailable" : `${count ?? 0} records in period`}
       </div>
     </Link>
-  );
-}
-
-function ProcessStep({
-  number,
-  title,
-  description,
-  icon: Icon,
-}: {
-  number: string;
-  title: string;
-  description: string;
-  icon: React.ElementType;
-}) {
-  return (
-    <div className="process-step">
-      <div className="process-step-heading">
-        <span>{number}</span>
-        <Icon size={19} />
-      </div>
-      <strong>{title}</strong>
-      <p>{description}</p>
-    </div>
   );
 }
 
@@ -858,6 +801,4 @@ createRoot(document.getElementById("root")!).render(
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
-  
-
 );

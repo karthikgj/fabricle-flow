@@ -107,3 +107,37 @@ body { font-size: 15.5px; }
   .ff-dashboard-filter-group label { width: 27px; }
   .ff-dashboard-filter-group input[type="date"] { width: calc(50% - 52px); min-width: 116px; }
 }
+
+/* Dashboard analytics: live transaction chart and status donut */
+.ff-dashboard-charts { margin-top: 25px; }
+.ff-charts-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; }
+.ff-charts-heading h2 { font-size:18px; margin:0 0 5px; font-weight:700; color:#172840; }
+.ff-charts-heading p { font-size:13px; margin:0; color:#8a98ab; }
+.ff-charts-refresh { display:grid; place-items:center; width:36px; height:36px; color:#64748b; border:1px solid #e2e8f0; border-radius:9px; background:#fff; cursor:pointer; }
+.ff-charts-refresh:disabled { opacity:.5; cursor:wait; }
+.ff-charts-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,1fr); gap:16px; }
+.ff-chart-card { min-width:0; border:1px solid #e5eaf1; border-radius:13px; background:#fff; padding:19px 20px 15px; }
+.ff-chart-card-heading { display:flex; align-items:center; gap:11px; margin-bottom:18px; }
+.ff-chart-card-heading h3 { color:#1d304b; font-weight:700; font-size:15px; margin:0 0 3px; }
+.ff-chart-card-heading p { color:#91a0b3; font-size:12px; margin:0; }
+.ff-chart-icon { width:38px; height:38px; flex-shrink:0; display:grid; place-items:center; border:1px solid #e7edf5; border-radius:10px; color:#5b7497; background:#f6f9fd; }
+.ff-chart-legend { display:flex; flex-wrap:wrap; gap:9px 16px; font-size:12px; color:#748399; margin-bottom:18px; }
+.ff-chart-legend span, .ff-donut-legend-row span { display:flex; align-items:center; gap:7px; }
+.ff-chart-legend i, .ff-donut-legend-row i { display:inline-block; width:9px; height:9px; border-radius:3px; flex-shrink:0; }
+.ff-bar-chart { height:210px; display:flex; align-items:stretch; justify-content:space-around; gap:9px; padding:10px 5px 0; border-bottom:1px solid #e9edf3; background:repeating-linear-gradient(to top,transparent 0px,transparent 49px,#f1f3f8 50px); }
+.ff-bar-group { min-width:0; flex:1; display:flex; flex-direction:column; align-items:stretch; justify-content:end; }
+.ff-bar-columns { flex:1; min-height:0; display:flex; align-items:flex-end; justify-content:center; gap:3px; }
+.ff-bar { min-height:0; width:min(16%,17px); min-width:5px; border-radius:4px 4px 0 0; opacity:.94; transition:height .3s ease; }
+.ff-bar-month { display:block; text-align:center; white-space:nowrap; font-size:11px; color:#72839b; height:24px; padding-top:8px; }
+.ff-chart-caption { margin:12px 0 0; color:#93a0b2; font-size:11px; line-height:1.55; }
+.ff-chart-empty { min-height:200px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:13px; color:#94a3b8; }
+.ff-chart-error { font-size:13px; color:#b42318; margin:0 0 13px; }
+.ff-donut-area { display:flex; align-items:center; justify-content:space-around; gap:16px; min-height:245px; }
+.ff-donut { flex:0 1 205px; width:52%; max-width:205px; overflow:visible; }
+.ff-donut-total { fill:#1e3049; font-size:29px; font-weight:750; }
+.ff-donut-label { fill:#93a1b5; font-size:13px; }
+.ff-donut-legend { flex:1; min-width:115px; max-width:210px; }
+.ff-donut-legend-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid #f0f2f6; color:#718098; font-size:12px; }
+.ff-donut-legend-row strong { color:#1e3049; font-weight:700; }
+@media (max-width:850px) { .ff-charts-grid { grid-template-columns:1fr; } }
+@media (max-width:560px) { .ff-chart-card { padding:15px; } .ff-donut-area { gap:6px; } .ff-donut { width:50%; } .ff-bar-chart { height:190px; } .ff-chart-legend { font-size:12px; } }
