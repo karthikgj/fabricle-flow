@@ -473,3 +473,111 @@
 .delivery-line-advanced-fields summary .text-muted {
   font-weight: 400;
 }
+
+
+
+/* ========================================
+   DELIVERY REGISTER - COLUMN LAYOUT
+   ======================================== */
+
+.delivery-register-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.delivery-register-table {
+  width: 100%;
+  min-width: 1000px;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+/* Column widths */
+.delivery-register-table th:nth-child(1),
+.delivery-register-table td:nth-child(1) {
+  width: 13%; /* Document */
+}
+
+.delivery-register-table th:nth-child(2),
+.delivery-register-table td:nth-child(2) {
+  width: 14%; /* Party */
+}
+
+.delivery-register-table th:nth-child(3),
+.delivery-register-table td:nth-child(3) {
+  width: 8%; /* Type */
+}
+
+.delivery-register-table th:nth-child(4),
+.delivery-register-table td:nth-child(4) {
+  width: 11%; /* Date */
+}
+
+.delivery-register-table th:nth-child(5),
+.delivery-register-table td:nth-child(5) {
+  width: 10%; /* Status */
+}
+
+.delivery-register-table th:nth-child(6),
+.delivery-register-table td:nth-child(6) {
+  width: 29%; /* Destination / Vehicle */
+}
+
+.delivery-register-table th:nth-child(7),
+.delivery-register-table td:nth-child(7) {
+  width: 15%; /* Actions */
+}
+
+/* Consistent spacing and alignment */
+.delivery-register-table th,
+.delivery-register-table td {
+  box-sizing: border-box;
+  padding: 16px 12px;
+  vertical-align: middle;
+  text-align: left;
+}
+
+/* Allow text wrapping */
+.delivery-register-table td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.5;
+}
+
+/* Destination / Vehicle */
+.delivery-register-table td:nth-child(6) {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  line-height: 1.55;
+}
+
+/* Vehicle text on a separate line */
+.delivery-register-table td:nth-child(6)
+.table-subtext {
+  display: block;
+  margin-top: 6px;
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+/* Keep action buttons aligned */
+.delivery-register-table td:nth-child(7) > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-content: center;
+}
+
+/* Small screens: scroll table, don't crush columns */
+@media (max-width: 768px) {
+  .delivery-register-wrapper {
+    overflow-x: auto;
+  }
+
+  .delivery-register-table {
+    min-width: 1000px;
+  }
+}

@@ -710,7 +710,8 @@ export default function DeliveryPage({ mode = "all" }: { mode?: "all" | "yarn" |
 
     <section className="panel">
 
-      {loading ? <div className="empty-state">Loading deliveries...</div> : <div className="table-wrapper"><table className="data-table">
+      {loading ? <div className="empty-state">Loading deliveries...</div> : <div className="table-wrapper delivery-register-wrapper">
+  <table className="data-table delivery-register-table">
 
         <thead><tr><th>Document</th><th>Party</th><th>Type</th><th>Date</th><th>Status</th><th>Destination / Vehicle</th><th>Actions</th></tr></thead>
 
