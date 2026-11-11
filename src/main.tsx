@@ -111,14 +111,11 @@ const navigation: NavItem[] = [
     description: "Record production, calculate yarn consumption and update fabric stock",
   },
   {
-    name: "Delivery",
-    path: "/delivery",
-    icon: Truck,
-    description: "Manage yarn deliveries, fabric deliveries and challans",
-    children: [
-      { name: "Delivery", path: "/delivery" },
-    ],
-  },
+  name: "Delivery",
+  path: "/delivery",
+  icon: Truck,
+  description: "Manage yarn deliveries, fabric deliveries and challans",
+},
   {
     name: "Invoices",
     path: "/invoices",
