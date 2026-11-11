@@ -36,6 +36,7 @@ import {
 import { supabase } from "./lib/supabase";
 import "./styles.css";
 import "./dashboard-ui.css";
+import "./mobile-zoom-safe.css";
 import { AuthProvider, useAuthContext } from "./hooks/AuthContext";
 import AuthGate from "./components/layout/AuthGate";
 import { useCompany } from "./hooks/useCompany";

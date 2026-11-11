@@ -1,0 +1,216 @@
+/* Fabricle Flow – responsive and zoom-safe overrides.
+   Import LAST, after styles.css and dashboard-ui.css.
+   This deliberately does not disable browser or pinch zoom.
+   Applies to screen only, preserving invoice/report print layouts. */
+
+@media screen {
+  :root { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+
+  html, body, #root, .app-shell, .main-area {
+    max-width: 100%;
+  }
+
+  .app-shell, .main-area, .page-content, .reports-workspace,
+  .reports-content, .dashboard-section, .panel, .report-table-panel,
+  .stock-register, .ff-overview-card, .ff-chart-card {
+    min-width: 0;
+  }
+
+  .page-content > *, .dashboard-section > *, .panel > *,
+  .reports-content > *, .report-table-panel > * {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  /* Long IDs, addresses, statuses and company names should not force
+     the entire viewport to expand. */
+  .page-content p, .page-content h1, .page-content h2,
+  .page-content h3, .page-content .table-subtext,
+  .page-content .ff-overview-note, .page-content .ff-overview-value {
+    overflow-wrap: anywhere;
+  }
+
+  /* Scrolling belongs to the TABLE container, never to the whole page. */
+  .table-wrapper, .table-responsive, .table-container,
+  .report-table-scroll, .sr-table-wrap, .stock-table-wrap,
+  .delivery-register-wrapper, .stock-table-wrap, .report-table-panel .report-table-scroll {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-wrapper > table, .table-responsive > table,
+  .table-container > table, .report-table-scroll > table,
+  .sr-table-wrap > table, .stock-table-wrap > table,
+  .delivery-register-wrapper > table {
+    max-width: none;
+  }
+
+  img, video, canvas, svg { max-width: 100%; }
+  .page-content img, .page-content video, .page-content canvas { height: auto; }
+
+  input, textarea, select, button { max-width: 100%; }
+  input, select, textarea { min-width: 0; }
+
+  /* Prevent a zoomed or long placeholder from expanding flex/grid tracks. */
+  .page-content .search-box,
+  .page-content .report-filters,
+  .page-content .report-inner-heading,
+  .page-content .report-inner-actions,
+  .page-content .ff-dashboard-tools,
+  .page-content .ff-dashboard-filter-group,
+  .page-content .delivery-list-toolbar {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+/* Treat narrow desktop windows and browser zoom like a tablet/mobile view. */
+@media screen and (max-width: 900px) {
+  .app-shell { display: block; width: 100%; min-width: 0; }
+  .main-area {
+    width: 100%; max-width: 100%; min-width: 0;
+    margin-left: 0 !important;
+  }
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 1001;
+    width: min(290px, 86vw);
+    max-width: 86vw;
+    height: 100dvh;
+    transform: translateX(-110%);
+    box-shadow: none;
+  }
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 12px 0 35px rgba(15, 23, 42, .14);
+  }
+  .mobile-menu-button {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+    width: 44px; height: 44px;
+  }
+  .mobile-close { display: grid; place-items: center; min-width: 44px; min-height: 44px; }
+  .mobile-overlay {
+    display: block; position: fixed; inset: 0;
+    z-index: 1000; background: rgba(15, 23, 42, .42);
+  }
+  .topbar { min-height: 60px; height: auto; padding: 8px 14px; gap: 10px; }
+  .topbar-context, .ff-topbar-heading, .ff-topbar-title-group { min-width: 0; flex: 1 1 auto; }
+  .topbar-right { flex: 0 0 auto; }
+  .page-content { padding: 14px 14px 24px !important; }
+  .reports-tabs { overflow-x: auto; overscroll-behavior-inline: contain; }
+  .reports-tab { white-space: nowrap; }
+  .ff-charts-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .ff-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .delivery-list-toolbar { grid-template-columns: minmax(0, 1fr) !important; }
+  .delivery-result-count { justify-self: start; }
+}
+
+@media screen and (max-width: 600px) {
+  /* 16px controls avoid iOS auto-zoom on focus; users can still pinch zoom. */
+  html { font-size: 16px; }
+  body { font-size: 16px; line-height: 1.5; }
+  .page-content { padding: 12px 12px 26px !important; }
+  .topbar { padding: 7px 12px; }
+  .ff-topbar-title { font-size: 18px; }
+  .ff-topbar-company { font-size: 12px; }
+  .topbar-right { gap: 6px; }
+
+  .page-content input:not([type="checkbox"]):not([type="radio"]),
+  .page-content select,
+  .page-content textarea,
+  .page-content .search-box input,
+  .page-content .report-filters input,
+  .page-content .report-filters select,
+  .page-content .ff-dashboard-filter-group input[type="date"],
+  .page-content .ff-dashboard-filter-group button {
+    font-size: 16px !important;
+  }
+
+  .page-content button,
+  .page-content .button,
+  .sidebar-nav .nav-item,
+  .sidebar-nav .nav-child,
+  .reports-tab {
+    min-height: 42px;
+  }
+  .sidebar-nav .nav-item, .sidebar-nav .nav-child { font-size: 16px !important; }
+
+  .ff-overview-grid,
+  .ff-charts-grid,
+  .stats-grid,
+  .activity-grid,
+  .page-links-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: 100%;
+  }
+  .ff-overview-card, .ff-chart-card, .stat-card, .activity-card { min-width: 0; }
+
+  /* Filter inputs stack instead of overflowing when zoomed. */
+  .ff-dashboard-tools { display: flex; flex-wrap: wrap; }
+  .ff-dashboard-filter-group {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    justify-content: stretch;
+    width: 100%; margin-left: 0;
+    gap: 8px;
+  }
+  .ff-dashboard-filter-group input[type="date"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 44px;
+  }
+  .ff-dashboard-filter-group button {
+    min-height: 44px;
+    min-width: 0;
+    white-space: normal;
+  }
+  .ff-dashboard-filter-group label { width: auto !important; }
+  .ff-dashboard-filter-group .ff-dashboard-refresh { width: 44px; }
+
+  .report-filters { display: flex; flex-direction: column; align-items: stretch; }
+  .report-filters > label, .report-filters .report-search,
+  .report-filters > button { width: 100%; min-width: 0 !important; max-width: 100%; flex: none; }
+  .report-inner-actions { width: 100%; flex-wrap: wrap; }
+  .report-inner-actions > button { flex: 1 1 auto; }
+  .outstanding-summary { grid-template-columns: minmax(0, 1fr) !important; }
+
+  /* At 200%+ zoom, footer controls stay usable without clipping. */
+  .ff-pagination { flex-wrap: wrap; align-items: flex-start; gap: 10px; }
+  .ff-pagination-summary { white-space: normal; }
+  .ff-pagination-actions {
+    display: flex; flex-wrap: wrap; justify-content: flex-end;
+    max-width: 100%; margin-left: auto;
+  }
+  .ff-pagination-page, .ff-pagination-arrow { min-width: 42px; min-height: 42px; }
+
+  /* Keep oversized modal/dialog bodies inside the visual viewport. */
+  [role="dialog"], .modal-content, .modal-card, .delivery-numbering-popover {
+    max-width: calc(100vw - 24px);
+    max-height: calc(100dvh - 24px);
+  }
+  [role="dialog"], .modal-content, .modal-card { overflow-y: auto; }
+  .delivery-numbering-popover { overflow-y: auto; }
+}
+
+@media screen and (max-width: 380px) {
+  .page-content { padding-inline: 10px !important; }
+  .ff-topbar-title { font-size: 17px; }
+  .ff-overview-card, .ff-chart-card { padding: 12px; }
+  .topbar { padding-inline: 9px; }
+  .mobile-menu-button { flex-basis: 42px; width: 42px; height: 42px; }
+  .ff-pagination-actions { justify-content: flex-start; margin-left: 0; }
+}
+
+@media screen and (prefers-reduced-motion: reduce) {
+  .sidebar { transition: none; }
+}
