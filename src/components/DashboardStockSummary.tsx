@@ -1,103 +1,200 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, ClipboardList, Package, RefreshCw, Wheat } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardList,
+  IndianRupee,
+  Package,
+  RefreshCw,
+  Truck,
+  Wheat,
+} from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useCompany } from "../hooks/useCompany";
 
-type StockSummary = {
+type InventorySummary = {
   yarn_stock: number;
   fabric_stock: number;
   open_job_orders: number;
 };
 
-const EMPTY: StockSummary = { yarn_stock: 0, fabric_stock: 0, open_job_orders: 0 };
+type OperationalSummary = {
+  pending_deliveries: number;
+  outstanding_receivables: number;
+};
 
-const fmt = (value: number) =>
+const EMPTY_INVENTORY: InventorySummary = {
+  yarn_stock: 0,
+  fabric_stock: 0,
+  open_job_orders: 0,
+};
+const EMPTY_OPERATIONS: OperationalSummary = {
+  pending_deliveries: 0,
+  outstanding_receivables: 0,
+};
+
+const quantity = (value: number) =>
   new Intl.NumberFormat("en-IN", { maximumFractionDigits: 3 }).format(value);
+const money = (value: number) =>
+  new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(value);
 
 export default function DashboardStockSummary() {
   const { company } = useCompany();
-  const [summary, setSummary] = useState<StockSummary>(EMPTY);
+  const [inventory, setInventory] = useState<InventorySummary>(EMPTY_INVENTORY);
+  const [operations, setOperations] = useState<OperationalSummary>(EMPTY_OPERATIONS);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [inventoryError, setInventoryError] = useState("");
+  const [operationsError, setOperationsError] = useState("");
 
   const refresh = useCallback(async () => {
     if (!company?.id) {
-      setSummary(EMPTY);
+      setInventory(EMPTY_INVENTORY);
+      setOperations(EMPTY_OPERATIONS);
       setLoading(false);
       return;
     }
     setLoading(true);
-    setError("");
-    try {
-      // SQL function must be created in Supabase before this query will work.
-      const { data, error: queryError } = await supabase.rpc("dashboard_inventory_summary", {
-        p_company_id: company.id,
-      });
-      if (queryError) throw queryError;
-      const row = Array.isArray(data) ? data[0] : data;
-      setSummary({
+    setInventoryError("");
+    setOperationsError("");
+
+    const [inventoryResult, operationsResult] = await Promise.all([
+      supabase.rpc("dashboard_inventory_summary", { p_company_id: company.id }),
+      supabase.rpc("dashboard_operational_kpis", { p_company_id: company.id }),
+    ]);
+
+    if (inventoryResult.error) {
+      setInventoryError(inventoryResult.error.message);
+    } else {
+      const row = Array.isArray(inventoryResult.data)
+        ? inventoryResult.data[0]
+        : inventoryResult.data;
+      setInventory({
         yarn_stock: Number(row?.yarn_stock ?? 0),
         fabric_stock: Number(row?.fabric_stock ?? 0),
         open_job_orders: Number(row?.open_job_orders ?? 0),
       });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load current stock.");
-    } finally {
-      setLoading(false);
     }
+
+    if (operationsResult.error) {
+      setOperationsError(operationsResult.error.message);
+    } else {
+      const row = Array.isArray(operationsResult.data)
+        ? operationsResult.data[0]
+        : operationsResult.data;
+      setOperations({
+        pending_deliveries: Number(row?.pending_deliveries ?? 0),
+        outstanding_receivables: Number(row?.outstanding_receivables ?? 0),
+      });
+    }
+    setLoading(false);
   }, [company?.id]);
 
   useEffect(() => { void refresh(); }, [refresh]);
 
   const cards = [
-    { title: "Yarn Stock", value: summary.yarn_stock, Icon: Wheat, tone: "green" },
-    { title: "Fabric Stock", value: summary.fabric_stock, Icon: Package, tone: "blue" },
-    { title: "Open Job Orders", value: summary.open_job_orders, Icon: ClipboardList, tone: "orange" },
+    {
+      title: "Available Yarn Stock",
+      value: quantity(inventory.yarn_stock),
+      Icon: Wheat,
+      tone: "green",
+      href: "/inventory/stock",
+      note: "Net posted ledger quantity",
+      unavailable: !!inventoryError,
+    },
+    {
+      title: "Available Fabric Stock",
+      value: quantity(inventory.fabric_stock),
+      Icon: Package,
+      tone: "blue",
+      href: "/inventory/fabric-stock",
+      note: "Net posted ledger quantity",
+      unavailable: !!inventoryError,
+    },
+    {
+      title: "Open Production Orders",
+      value: quantity(inventory.open_job_orders),
+      Icon: ClipboardList,
+      tone: "orange",
+      href: "/production",
+      note: "Draft production orders",
+      unavailable: !!inventoryError,
+    },
+    {
+      title: "Pending Deliveries",
+      value: quantity(operations.pending_deliveries),
+      Icon: Truck,
+      tone: "purple",
+      href: "/delivery",
+      note: "Draft delivery documents",
+      unavailable: !!operationsError,
+    },
+    {
+      title: "Outstanding Receivables",
+      value: money(operations.outstanding_receivables),
+      Icon: IndianRupee,
+      tone: "teal",
+      href: "/reports/outstanding",
+      note: "Issued invoices less posted receipts",
+      unavailable: !!operationsError,
+    },
   ];
 
   return (
-    <section className="dashboard-section">
-      <div className="section-title-row">
+    <section className="dashboard-section ff-overview-section" aria-label="Business overview">
+      <div className="section-title-row ff-overview-heading">
         <div>
-          <h2>Current Stock</h2>
-          <p>Live inventory balances from Supabase.</p>
+          <h2>Business Overview</h2>
+          <p>Live stock, production, delivery and customer balances.</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <button
-            type="button"
-            className="button button-outline"
-            onClick={() => void refresh()}
-            disabled={loading || !company?.id}
-            title="Refresh stock balances"
-            aria-label="Refresh stock balances"
-          >
-            <RefreshCw size={16} className={loading ? "spin" : ""} />
-          </button>
-          <Link to="/inventory/stock" className="text-link">
-            View stock <ArrowRight size={15} />
-          </Link>
-        </div>
+        <button
+          type="button"
+          className="button button-outline ff-overview-refresh"
+          onClick={() => void refresh()}
+          disabled={loading || !company?.id}
+          aria-label="Refresh business overview"
+          title="Refresh business overview"
+        >
+          <RefreshCw size={16} className={loading ? "spin" : ""} />
+        </button>
       </div>
-      {error && (
-        <p role="alert" style={{ color: "#b42318", margin: "0 0 14px" }}>
-          Unable to load stock: {error}
+
+      {inventoryError && (
+        <p role="alert" className="ff-overview-error">
+          Stock and production KPIs could not load: {inventoryError}
         </p>
       )}
-      <div className="stats-grid">
-        {cards.map(({ title, value, Icon, tone }) => (
-          <article className="stat-card" key={title}>
-            <div className={`stat-icon ${tone}`}><Icon size={21} /></div>
-            <div className="stat-content">
-              <span className="stat-label">{title}</span>
-              <strong className="stat-value">{loading ? "…" : error ? "—" : fmt(value)}</strong>
-              <span className="stat-footnote">
-                {loading ? "Loading…" : error ? "Data unavailable" : "Updated from stock ledger"}
+      {operationsError && (
+        <p role="alert" className="ff-overview-error">
+          Delivery and receivables KPIs could not load: {operationsError}
+        </p>
+      )}
+
+      <div className="ff-overview-grid">
+        {cards.map(({ title, value, Icon, tone, href, note, unavailable }) => (
+          <Link className="ff-overview-card" to={href} key={title}>
+            <span className={`ff-overview-icon ff-overview-icon--${tone}`}>
+              <Icon size={21} />
+            </span>
+            <span className="ff-overview-card-body">
+              <span className="ff-overview-card-title">{title}</span>
+              <strong className="ff-overview-value">
+                {loading ? "…" : unavailable ? "—" : value}
+              </strong>
+              <span className="ff-overview-note">
+                {loading ? "Loading…" : unavailable ? "Data unavailable" : note}
               </span>
-            </div>
-          </article>
+            </span>
+            <ArrowRight className="ff-overview-card-arrow" size={16} />
+          </Link>
         ))}
       </div>
+      <p className="ff-overview-disclaimer">
+        Stock values are net quantities from the stock ledger; verify units before combining differently measured items. Monetary amounts are in INR.
+      </p>
     </section>
   );
 }

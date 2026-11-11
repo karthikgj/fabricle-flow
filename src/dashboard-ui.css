@@ -141,3 +141,26 @@ body { font-size: 15.5px; }
 .ff-donut-legend-row strong { color:#1e3049; font-weight:700; }
 @media (max-width:850px) { .ff-charts-grid { grid-template-columns:1fr; } }
 @media (max-width:560px) { .ff-chart-card { padding:15px; } .ff-donut-area { gap:6px; } .ff-donut { width:50%; } .ff-bar-chart { height:190px; } .ff-chart-legend { font-size:12px; } }
+
+/* Five-card business KPI overview; 3/2 desktop, 2-column tablet, one-column mobile. */
+.ff-overview-section { margin-top: 16px !important; }
+.ff-overview-heading { margin-bottom: 14px; }
+.ff-overview-refresh { display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; padding: 0 !important; }
+.ff-overview-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.ff-overview-card { position: relative; display: flex; gap: 13px; min-width: 0; min-height: 120px; padding: 19px; align-items: flex-start; border: 1px solid #e4e9f1; border-radius: 13px; background: #fff; text-decoration: none; color: inherit; transition: border-color .15s, box-shadow .15s; }
+.ff-overview-card:hover { border-color: #bdcee9; box-shadow: 0 7px 20px rgba(21, 43, 70, .055); }
+.ff-overview-icon { flex: 0 0 45px; height: 45px; display: grid; place-items: center; border-radius: 11px; border: 1px solid #e8edf4; }
+.ff-overview-icon--green { color: #477a58; background: #f1f8f3; }
+.ff-overview-icon--blue { color: #47769f; background: #f3f7fb; }
+.ff-overview-icon--orange { color: #a5793c; background: #fbf7f0; }
+.ff-overview-icon--purple { color: #8068aa; background: #f7f3fc; }
+.ff-overview-icon--teal { color: #228b84; background: #f0faf8; }
+.ff-overview-card-body { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 6px; }
+.ff-overview-card-title { font-size: 14px; line-height: 1.3; font-weight: 550; color: #6f7e92; }
+.ff-overview-value { font-size: clamp(22px, 2.1vw, 29px); font-weight: 750; letter-spacing: -.03em; line-height: 1.16; color: #172840; overflow-wrap: anywhere; }
+.ff-overview-note { font-size: 12px; line-height: 1.35; color: #98a4b3; }
+.ff-overview-card-arrow { position: absolute; right: 12px; top: 12px; color: #a4aec0; opacity: .7; }
+.ff-overview-error { color: #b42318; font-size: 13px; margin: 0 0 9px; }
+.ff-overview-disclaimer { font-size: 12px; line-height: 1.5; color: #94a3b8; margin: 10px 0 0; }
+@media (max-width: 1050px) { .ff-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .ff-overview-grid { grid-template-columns: 1fr; gap: 10px; } .ff-overview-card { min-height: 96px; padding: 15px; } .ff-overview-card-title { font-size: 15px; } .ff-overview-note { font-size: 13px; } .ff-overview-value { font-size: 25px; } }
