@@ -10,7 +10,6 @@ import {
   useLocation,
 } from "react-router-dom";
 import {
-  Activity,
   ArrowDownToLine,
   ArrowRight,
   BarChart3,
@@ -860,5 +859,5 @@ createRoot(document.getElementById("root")!).render(
     </BrowserRouter>
   </React.StrictMode>
   
-  
+
 );
