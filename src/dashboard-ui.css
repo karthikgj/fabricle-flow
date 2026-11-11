@@ -1,0 +1,109 @@
+/* Fabricle Flow: compact dashboard and shared page hierarchy. */
+
+/* Titles now live in the top bar. Keep page-level action buttons accessible. */
+.topbar .ff-topbar-heading {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+.ff-topbar-title-group { display: flex; flex-direction: column; min-width: 0; gap: 1px; }
+.ff-topbar-title {
+  color: #172840;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ff-topbar-company {
+  font-size: 12px;
+  color: #8490a3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Existing modules use page-header for titles AND actions. Hide only the title. */
+.page-content .page-header {
+  min-height: 0 !important;
+  margin: 0 0 8px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  justify-content: flex-end;
+}
+.page-content .page-header .page-heading { display: none !important; }
+.page-content .page-header:has(.page-actions:empty) { display: none !important; }
+.page-content .page-header:not(:has(.page-actions)) { display: none !important; }
+.page-content .page-header .page-actions { margin: 0 !important; }
+
+/* Tighten the main viewport without shrinking content or tap targets. */
+.page-content { padding-top: 16px !important; }
+.page-content .dashboard-section { margin-top: 20px; }
+
+/* Compact, right aligned dashboard filter toolbar */
+.ff-dashboard-tools {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 15px;
+  min-height: 42px;
+}
+.ff-dashboard-tools-label {
+  font-size: 16px;
+  font-weight: 650;
+  color: #52657f;
+}
+.ff-dashboard-filter-group {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-left: auto;
+}
+.ff-dashboard-filter-group label { font-size: 12px; font-weight: 650; color: #66758a; }
+.ff-dashboard-filter-group input[type="date"],
+.ff-dashboard-filter-group button {
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid #e1e7ef;
+  border-radius: 9px;
+  background: white;
+  color: #364b67;
+  font: inherit;
+  font-size: 13px;
+}
+.ff-dashboard-filter-group input[type="date"] { width: 144px; padding: 0 8px; }
+.ff-dashboard-filter-group button { padding: 0 11px; font-weight: 600; cursor: pointer; }
+.ff-dashboard-filter-group button:hover { background: #f6f8fc; }
+.ff-dashboard-filter-group .ff-dashboard-refresh { display: inline-flex; align-items: center; justify-content: center; width: 36px; padding: 0; }
+
+/* Typography: mildly larger everywhere, while conserving space. */
+body { font-size: 15.5px; }
+.sidebar-nav .nav-item, .sidebar-nav .nav-child { font-size: 14.5px; }
+.page-content p, .page-content td, .page-content th, .page-content input, .page-content select, .page-content button { font-size: max(14px, 0.92em); }
+
+@media (max-width: 700px) {
+  body { font-size: 16px; }
+  .ff-topbar-title { font-size: 18px; }
+  .ff-topbar-company { font-size: 12px; }
+  .page-content { padding-top: 12px !important; }
+  .ff-dashboard-tools { display: block; }
+  .ff-dashboard-tools-label { display: none; }
+  .ff-dashboard-filter-group { margin-left: 0; justify-content: flex-start; gap: 6px; }
+  .ff-dashboard-filter-group label { font-size: 13px; }
+  .ff-dashboard-filter-group input[type="date"] { width: 132px; font-size: 13px; }
+  .ff-dashboard-filter-group button { min-height: 38px; font-size: 13px; }
+  .page-content .dashboard-section { margin-top: 18px; }
+  .stat-label, .stat-footnote { font-size: 13px !important; }
+  .nav-item, .nav-child { font-size: 15px !important; }
+  button, .nav-child, .nav-item { touch-action: manipulation; }
+}
+@media (max-width: 400px) {
+  .ff-dashboard-filter-group { justify-content: flex-start; }
+  .ff-dashboard-filter-group label { width: 27px; }
+  .ff-dashboard-filter-group input[type="date"] { width: calc(50% - 52px); min-width: 116px; }
+}

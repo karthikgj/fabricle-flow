@@ -1,5 +1,5 @@
 import DashboardStockSummary from "./components/DashboardStockSummary";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   BrowserRouter,
@@ -15,7 +15,6 @@ import {
   ArrowRight,
   BarChart3,
   Boxes,
-  CalendarDays,
   ChevronDown,
   ChevronRight,
   ClipboardList,
@@ -35,7 +34,9 @@ import {
   X,
 } from "lucide-react";
 
+import { supabase } from "./lib/supabase";
 import "./styles.css";
+import "./dashboard-ui.css";
 import { AuthProvider, useAuthContext } from "./hooks/AuthContext";
 import AuthGate from "./components/layout/AuthGate";
 import { useCompany } from "./hooks/useCompany";
@@ -176,9 +177,55 @@ function Dashboard() {
   const today = formatDate(new Date());
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
-  const [refreshing, setRefreshing] = useState(false);
   const [stockRefreshKey, setStockRefreshKey] = useState(0);
-  const { company, loading: companyLoading } = useCompany();
+  const { company } = useCompany();
+  const [activityCounts, setActivityCounts] = useState<Record<string, number>>({});
+  const [activityErrors, setActivityErrors] = useState<Record<string, boolean>>({});
+  const [activityLoading, setActivityLoading] = useState(false);
+
+  useEffect(() => {
+    if (!company?.id) {
+      setActivityCounts({});
+      setActivityErrors({});
+      return;
+    }
+    let active = true;
+    setActivityLoading(true);
+    const metrics = [
+      { key: "receipts", table: "goods_receipts", date: "receipt_date" },
+      { key: "production", table: "production_orders", date: "production_date" },
+      { key: "deliveries", table: "deliveries", date: "delivery_date" },
+      { key: "invoices", table: "sales_invoices", date: "invoice_date" },
+    ];
+
+    const load = async () => {
+      const nextCounts: Record<string, number> = {};
+      const nextErrors: Record<string, boolean> = {};
+      await Promise.all(metrics.map(async ({ key, table, date }) => {
+        try {
+          // Supabase-js allows dynamically named public tables; the existing
+          // app's company RLS policies still apply to these requests.
+          const { count, error } = await supabase
+            .from(table)
+            .select("id", { count: "exact", head: true })
+            .eq("company_id", company.id)
+            .gte(date, fromDate)
+            .lte(date, toDate);
+          if (error) throw error;
+          nextCounts[key] = count ?? 0;
+        } catch {
+          nextErrors[key] = true;
+        }
+      }));
+      if (active) {
+        setActivityCounts(nextCounts);
+        setActivityErrors(nextErrors);
+        setActivityLoading(false);
+      }
+    };
+    void load();
+    return () => { active = false; };
+  }, [company?.id, fromDate, toDate, stockRefreshKey]);
 
   function setToday() {
     const date = formatDate(new Date());
@@ -194,94 +241,36 @@ function Dashboard() {
 
   function refreshDashboard() {
     setStockRefreshKey((value) => value + 1);
-    setRefreshing(true);
-    window.setTimeout(() => setRefreshing(false), 350);
   }
 
   return (
     <>
-      <PageHeader
-        title="Dashboard"
-        subtitle="Your knitting job-work business at a glance."
-        action={
-          <button
-            type="button"
-            className="button button-outline"
-            onClick={refreshDashboard}
-          >
-            <RefreshCw size={16} className={refreshing ? "spin" : ""} />
-            Refresh
-          </button>
-        }
-      />
-
-      <section className="company-strip">
-        <div className="company-symbol">
-          <Factory size={21} />
-        </div>
-
-        <div>
-          <span className="eyebrow">COMPANY WORKSPACE</span>
-          <strong>
-            {companyLoading
-              ? "Loading organisation..."
-              : company?.name ?? "Organisation unavailable"}
-          </strong>
-          <span className="text-muted">Inventory &amp; Production</span>
-        </div>
-
-        <span className="connection-status">
-          <span className="status-dot" />
-          {companyLoading ? "Loading" : "Organisation connected"}
-        </span>
-      </section>
-
-      <section className="panel date-panel">
-        <div className="date-field">
-          <label htmlFor="from-date">From Date</label>
-          <div className="date-input-wrap">
-            <CalendarDays size={17} />
-            <input
-              id="from-date"
-              type="date"
-              value={fromDate}
-              max={toDate}
-              onChange={(event) => setFromDate(event.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="date-field">
-          <label htmlFor="to-date">To Date</label>
-          <div className="date-input-wrap">
-            <CalendarDays size={17} />
-            <input
-              id="to-date"
-              type="date"
-              value={toDate}
-              min={fromDate}
-              onChange={(event) => setToDate(event.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="date-shortcuts">
-          <button
-            type="button"
-            className="button button-outline"
-            onClick={setToday}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            className="button button-outline"
-            onClick={setThisMonth}
-          >
-            This Month
+      <div className="ff-dashboard-tools" aria-label="Dashboard filters">
+        <div className="ff-dashboard-tools-label">Overview</div>
+        <div className="ff-dashboard-filter-group">
+          <label htmlFor="ff-from-date">From</label>
+          <input
+            id="ff-from-date"
+            type="date"
+            value={fromDate}
+            max={toDate}
+            onChange={(event) => setFromDate(event.target.value)}
+          />
+          <label htmlFor="ff-to-date">To</label>
+          <input
+            id="ff-to-date"
+            type="date"
+            value={toDate}
+            min={fromDate}
+            onChange={(event) => setToDate(event.target.value)}
+          />
+          <button type="button" onClick={setToday}>Today</button>
+          <button type="button" onClick={setThisMonth}>This month</button>
+          <button type="button" className="ff-dashboard-refresh" onClick={refreshDashboard} aria-label="Refresh dashboard stock" title="Refresh dashboard stock">
+            <RefreshCw size={17} />
           </button>
         </div>
-      </section>
+      </div>
 
       <DashboardStockSummary key={stockRefreshKey} />
 
@@ -298,26 +287,38 @@ function Dashboard() {
 
         <div className="activity-grid">
           <ActivityCard
+            count={activityCounts.receipts}
+            loading={activityLoading}
+            error={activityErrors.receipts}
             title="Yarn Receipts"
             description="Customer-supplied yarn received"
             icon={ArrowDownToLine}
             path="/inventory/receipts"
           />
           <ActivityCard
+            count={activityCounts.production}
+            loading={activityLoading}
+            error={activityErrors.production}
             title="Production"
             description="Record yarn consumption and fabric output"
             icon={Factory}
             path="/production"
           />
           <ActivityCard
-            title="Fabric Deliveries"
-            description="Finished fabric sent to customers"
+            count={activityCounts.deliveries}
+            loading={activityLoading}
+            error={activityErrors.deliveries}
+            title="Deliveries"
+            description="Customer deliveries in selected period"
             icon={Truck}
-            path="/delivery/fabric"
+            path="/delivery"
           />
           <ActivityCard
-            title="Invoices & Payments"
-            description="Billing and payment activity"
+            count={activityCounts.invoices}
+            loading={activityLoading}
+            error={activityErrors.invoices}
+            title="Invoices"
+            description="Sales invoices in selected period"
             icon={CreditCard}
             path="/invoices"
           />
@@ -360,29 +361,23 @@ function Dashboard() {
         </div>
       </section>
 
-      <section className="notice-panel">
-        <div className="notice-icon">
-          <Activity size={19} />
-        </div>
-        <div>
-          <strong>Inventory connected to the dashboard</strong>
-          <p>
-            Current Stock is loaded from the stock ledger. Activity cards are
-            navigation shortcuts; their live transaction summaries are not yet connected.
-          </p>
-        </div>
-      </section>
     </>
   );
 }
 
 function ActivityCard({
   title,
+  count,
+  loading = false,
+  error = false,
   description,
   icon: Icon,
   path,
 }: {
   title: string;
+  count?: number;
+  loading?: boolean;
+  error?: boolean;
   description: string;
   icon: React.ElementType;
   path: string;
@@ -397,7 +392,9 @@ function ActivityCard({
       </div>
       <strong>{title}</strong>
       <span>{description}</span>
-      <div className="activity-empty">Live activity not connected</div>
+      <div className="activity-empty">
+        {loading ? "Loading…" : error ? "Count unavailable" : `${count ?? 0} records in period`}
+      </div>
     </Link>
   );
 }
@@ -636,6 +633,38 @@ function Sidebar({
   );
 }
 
+function titleForPath(pathname: string): string {
+  if (pathname === "/") return "Dashboard";
+  const exact: Record<string, string> = {
+    "/masters/parties": "Parties",
+    "/masters/items": "Items",
+    "/masters/units": "Units",
+    "/masters/locations": "Locations",
+    "/masters/lots": "Lots",
+    "/masters/boms": "Bill of Materials",
+    "/inventory/receipts": "Yarn Receipts / GRN",
+    "/inventory/stock": "Current Stock",
+    "/inventory/adjustments": "Stock Adjustments",
+    "/inventory/ledger": "Stock Ledger",
+    "/inventory/fabric-stock": "Fabric Stock",
+    "/production": "Production",
+    "/delivery": "Delivery",
+    "/delivery/yarn": "Delivery",
+    "/delivery/fabric": "Delivery",
+    "/delivery/challans": "Delivery",
+    "/invoices": "Invoices",
+    "/payments": "Payments",
+    "/reports": "Reports",
+    "/settings": "Settings",
+  };
+  if (exact[pathname]) return exact[pathname];
+  if (pathname.startsWith("/reports/")) {
+    const leaf = pathname.split("/").filter(Boolean).pop() ?? "Reports";
+    return leaf.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  }
+  return navigation.find((item) => pathname.startsWith(item.path + "/"))?.name ?? "Workspace";
+}
+
 function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -643,7 +672,7 @@ function AppLayout() {
   const [signOutError, setSignOutError] = useState("");
 
   const location = useLocation();
-  const { company, loading: companyLoading, error: companyError } = useCompany();
+  const { company, loading: companyLoading } = useCompany();
   const { user, signOut } = useAuthContext();
 
   const activeModule = navigation.find((item) =>
@@ -689,36 +718,19 @@ function AppLayout() {
             <Menu size={21} />
           </button>
 
-          <div className="topbar-context">
-            <span className="topbar-context-icon">
-              <LayoutDashboard size={17} />
+          <div className="topbar-context ff-topbar-heading">
+            <span className="topbar-context-icon" aria-hidden="true">
+              {activeModule ? React.createElement(activeModule.icon, { size: 18 }) : <LayoutDashboard size={18} />}
             </span>
-            <span>
-              {companyLoading
-                ? "Loading..."
-                : company?.name ?? "Organisation unavailable"}
-            </span>
-
-            {location.pathname !== "/" && (
-              <>
-                <ChevronRight size={14} className="breadcrumb-chevron" />
-                <span className="breadcrumb-current">
-                  {activeModule?.name ?? "Workspace"}
-                </span>
-              </>
-            )}
+            <div className="ff-topbar-title-group">
+              <strong className="ff-topbar-title">{titleForPath(location.pathname)}</strong>
+              {!companyLoading && company?.name && (
+                <span className="ff-topbar-company">{company.name}</span>
+              )}
+            </div>
           </div>
 
           <div className="topbar-right">
-            <span className="connection-status">
-              <span className="status-dot" />
-              {companyError
-                ? "Connection issue"
-                : companyLoading
-                  ? "Loading"
-                  : "Organisation connected"}
-            </span>
-
             <div className="user-menu">
               <button
                 type="button"
@@ -778,7 +790,7 @@ function AppLayout() {
             <Route path="/production" element={<Production />} />
             <Route path="/delivery" element={<Delivery />} />
             <Route path="/delivery/yarn" element={<Delivery />} />
-            <Route path="/delivery/fabric" element={<Delivery />} />
+            <Route path="/delivery" element={<Delivery />} />
             <Route path="/delivery/challans" element={<Delivery />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/payments" element={<Payments />} />
