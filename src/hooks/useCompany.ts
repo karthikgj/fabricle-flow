@@ -8,6 +8,7 @@ type Company = {
   name: string;
   country: string;
   base_currency: string;
+  logo_url: string | null;
 };
 
 export function useCompany() {
@@ -67,7 +68,7 @@ export function useCompany() {
 
       const { data, error: companyError } = await supabase
         .from("companies")
-        .select("id, name, country, base_currency")
+        .select("id, name, country, base_currency, logo_url")
         .eq("id", memberships[0].company_id)
         .maybeSingle();
 
@@ -138,7 +139,7 @@ export function useCompany() {
 
         const { data, error: companyError } = await supabase
           .from("companies")
-          .select("id, name, country, base_currency")
+          .select("id, name, country, base_currency, logo_url")
           .eq("id", memberships[0].company_id)
           .maybeSingle();
 
@@ -172,6 +173,19 @@ export function useCompany() {
       active = false;
     };
   }, [userId]); // Deliberately do not depend on the whole user object.
+
+  // Settings can update the organisation while other components have separate
+  // useCompany instances. Refresh those instances without reloading the page.
+  useEffect(() => {
+    const onUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ companyId?: string }>).detail;
+      if (detail?.companyId && detail.companyId === company?.id) {
+        void loadCompany();
+      }
+    };
+    window.addEventListener("fabricle:company-updated", onUpdated);
+    return () => window.removeEventListener("fabricle:company-updated", onUpdated);
+  }, [company?.id, loadCompany]);
 
   return {
     company,

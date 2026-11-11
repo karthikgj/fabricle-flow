@@ -322,7 +322,7 @@ export default function Settings() {
     const file = event.target.files?.[0];
     event.target.value = "";
 
-    if (!file || !company?.id) return;
+    if (!file || !company?.id || !canEdit) return;
 
     setError("");
     setMessage("");
@@ -347,14 +347,14 @@ export default function Settings() {
             ? "webp"
             : "jpg";
 
-      const path = `${company.id}/logo.${extension}`;
+      const path = `${company.id}/logo-${crypto.randomUUID()}.${extension}`;
 
       const { error: uploadError } = await supabase.storage
         .from("company-logos")
         .upload(path, file, {
-          upsert: true,
+          upsert: false,
           contentType: file.type,
-          cacheControl: "3600",
+          cacheControl: "31536000",
         });
 
       if (uploadError) throw uploadError;
@@ -363,14 +363,29 @@ export default function Settings() {
         .from("company-logos")
         .getPublicUrl(path);
 
+      // Apply the newly uploaded logo immediately. Never require a second
+      // Save click and never silently imply that a failed database write worked.
+      const { data: savedLogo, error: saveLogoError } = await supabase
+        .from("companies")
+        .update({ logo_url: data.publicUrl, updated_at: new Date().toISOString() })
+        .eq("id", company.id)
+        .select("id, logo_url")
+        .single();
+
+      if (saveLogoError) throw saveLogoError;
+      if (!savedLogo) throw new Error("Organisation logo could not be saved.");
+
       setForm((current) => ({
         ...current,
-        logo_url: data.publicUrl,
+        logo_url: savedLogo.logo_url ?? data.publicUrl,
       }));
-
-      setMessage(
-        "Logo uploaded. Save organisation details to apply it to the profile."
+      await refreshCompany();
+      window.dispatchEvent(
+        new CustomEvent("fabricle:company-updated", {
+          detail: { companyId: company.id },
+        })
       );
+      setMessage("Logo saved and applied to your organisation.");
     } catch (uploadError) {
       setError(
         uploadError instanceof Error
@@ -446,6 +461,11 @@ export default function Settings() {
       }
 
       await refreshCompany();
+      window.dispatchEvent(
+        new CustomEvent("fabricle:company-updated", {
+          detail: { companyId: company.id },
+        })
+      );
       setMessage("Organisation profile saved successfully.");
     } catch (saveError) {
       setError(
@@ -534,7 +554,7 @@ export default function Settings() {
               <strong>Organisation logo</strong>
               <p>
                 Use your own company logo, not the Fabricle Flow product
-                logo. PNG, JPEG or WebP, up to 2 MB.
+                logo. PNG, JPEG or WebP, up to 2 MB. Changes apply immediately.
               </p>
 
               <label
@@ -548,7 +568,7 @@ export default function Settings() {
                   <Upload size={15} />
                 )}
 
-                {uploading ? "Uploading…" : "Upload logo"}
+                {uploading ? "Uploading…" : "Upload & apply logo"}
 
                 <input
                   type="file"

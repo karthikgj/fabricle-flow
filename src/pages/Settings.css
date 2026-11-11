@@ -40,3 +40,6 @@
 .org-spin{animation:org-spin 1s linear infinite}
 @keyframes org-spin{to{transform:rotate(360deg)}}
 @media(max-width:700px){.org-page-header{align-items:flex-start}.org-page-header h1{font-size:24px}.org-card{padding:16px}.org-form-grid{grid-template-columns:1fr}.org-field-wide{grid-column:auto}.org-logo-row{align-items:flex-start}.org-logo-preview{flex-basis:74px;width:74px;height:70px}.org-save-bar{align-items:stretch;flex-direction:column}.org-save-bar button{width:100%}}
+
+/* Settings heading already exists in app topbar */
+.org-page-header{display:none}

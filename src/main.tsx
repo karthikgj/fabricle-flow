@@ -671,6 +671,16 @@ function AppLayout() {
           </div>
 
           <div className="topbar-right">
+            {company?.logo_url && (
+              <Link
+                to="/settings"
+                className="ff-company-header-logo"
+                title={`${company.name} organisation settings`}
+                aria-label={`${company.name} organisation settings`}
+              >
+                <img src={company.logo_url} alt={`${company.name} logo`} />
+              </Link>
+            )}
             <div className="user-menu">
               <button
                 type="button"

@@ -164,3 +164,29 @@ body { font-size: 15.5px; }
 .ff-overview-disclaimer { font-size: 12px; line-height: 1.5; color: #94a3b8; margin: 10px 0 0; }
 @media (max-width: 1050px) { .ff-overview-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 600px) { .ff-overview-grid { grid-template-columns: 1fr; gap: 10px; } .ff-overview-card { min-height: 96px; padding: 15px; } .ff-overview-card-title { font-size: 15px; } .ff-overview-note { font-size: 13px; } .ff-overview-value { font-size: 25px; } }
+
+/* Organisation-specific logo (only rendered when an organisation has one). */
+.ff-company-header-logo {
+  width: 108px;
+  height: 44px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 1;
+  background: transparent;
+  text-decoration: none;
+}
+.ff-company-header-logo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+@media (max-width: 700px) {
+  .ff-company-header-logo { width: 65px; height: 34px; }
+}
+@media (max-width: 380px) {
+  .ff-company-header-logo { width: 48px; height: 30px; }
+}
