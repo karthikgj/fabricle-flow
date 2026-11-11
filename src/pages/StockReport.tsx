@@ -11,6 +11,7 @@ import {
 
 import { supabase } from "../lib/supabase";
 import { useCompany } from "../hooks/useCompany";
+import Pagination from "../components/Pagination";
 
 type Item = {
   id: string;
@@ -119,6 +120,8 @@ export default function StockReport() {
 
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const DISPLAY_PAGE_SIZE = 10;
 
   // --------------------------------------------------
   // LOAD REPORT DATA
@@ -375,6 +378,16 @@ export default function StockReport() {
   // --------------------------------------------------
   // SUMMARY TOTALS
   // --------------------------------------------------
+
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / DISPLAY_PAGE_SIZE));
+  const pageRows = useMemo(
+    () => filteredRows.slice((currentPage - 1) * DISPLAY_PAGE_SIZE, currentPage * DISPLAY_PAGE_SIZE),
+    [filteredRows, currentPage]
+  );
+  useEffect(() => { setCurrentPage(1); }, [search, itemType, locationFilter, fromDate, toDate]);
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const summary = useMemo(() => {
     return filteredRows.reduce(
@@ -677,7 +690,7 @@ export default function StockReport() {
 
             <tbody>
               {!loading &&
-                filteredRows.map((row) => {
+                pageRows.map((row) => {
                   const digits = row.precisionDigits;
 
                   return (
@@ -743,6 +756,14 @@ export default function StockReport() {
             </tbody>
           </table>
         </div>
+        <Pagination
+          totalItems={filteredRows.length}
+          currentPage={currentPage}
+          pageSize={DISPLAY_PAGE_SIZE}
+          onPageChange={setCurrentPage}
+          loading={loading}
+          itemLabel="items"
+        />
       </section>
 
       {/* STYLES */}

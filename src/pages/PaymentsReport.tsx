@@ -3,6 +3,7 @@ import { AlertCircle, Download, Printer, RefreshCw, Wallet } from "lucide-react"
 import { supabase } from "../lib/supabase";
 import { useCompany } from "../hooks/useCompany";
 import { formatDate } from "../lib/dateUtils";
+import Pagination from "../components/Pagination";
 
 type Payment = {
   id: string; payment_no: string; party_id: string;
@@ -31,6 +32,8 @@ export default function PaymentsReport() {
   const [status, setStatus] = useState("all");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   const load = useCallback(async () => {
     if (!company?.id) return;
@@ -70,6 +73,16 @@ export default function PaymentsReport() {
       (!fromDate || r.payment_date >= fromDate) && (!toDate || r.payment_date <= toDate)
     );
   }, [rows, search, customerId, method, status, fromDate, toDate]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageRows = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  );
+  useEffect(() => { setCurrentPage(1); }, [search, customerId, method, status, fromDate, toDate]);
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
 
   const totals = useMemo(() => {
     const posted = filtered.filter(r => r.status === "posted");
@@ -118,10 +131,11 @@ export default function PaymentsReport() {
     <section className="report-table-panel panel">
       <div className="report-table-title"><h3>Customer receipt activity</h3><p>{filtered.length} records · dates shown as DD-MM-YYYY</p></div>
       <div className="report-table-scroll"><table className="report-table"><thead><tr><th>Receipt No.</th><th>Date</th><th>Customer</th><th>Payment Method</th><th>Reference No.</th><th>Amount</th><th>Status</th></tr></thead>
-        <tbody>{loading ? <tr><td colSpan={7} className="report-empty">Loading customer receipts…</td></tr> : filtered.length ? filtered.map(r => <tr key={r.id}>
+        <tbody>{loading ? <tr><td colSpan={7} className="report-empty">Loading customer receipts…</td></tr> : filtered.length ? pageRows.map(r => <tr key={r.id}>
           <td><strong>{r.payment_no}</strong></td><td>{formatDate(r.payment_date)}</td><td>{r.partyName}</td><td>{methodName(r.method)}</td><td>{r.reference_no || "—"}</td><td>{money(Number(r.amount) || 0)}</td><td><span className="ageing-pill">{r.status}</span></td>
         </tr>) : <tr><td colSpan={7} className="report-empty">No customer receipts match these filters.</td></tr>}</tbody>
       </table></div>
+      <Pagination totalItems={filtered.length} currentPage={currentPage} pageSize={PAGE_SIZE} onPageChange={setCurrentPage} loading={loading} itemLabel="receipts" />
     </section>
     <p className="report-footnote">This report includes customer receipts only. It does not display invoice allocations, advances or supplier payments.</p>
   </section>;
