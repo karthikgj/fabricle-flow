@@ -160,3 +160,100 @@
   .page-content .ff-overview-card,
   .page-content .activity-card { transition: none; }
 }
+
+
+/* ============================================
+   COMPACT MOBILE DASHBOARD DATE FILTER
+   ============================================ */
+
+@media screen and (max-width: 600px) {
+
+  .page-content .ff-dashboard-tools {
+    display: block;
+    margin: 0 0 12px;
+    min-height: 0;
+  }
+
+  .page-content .ff-dashboard-filter-group {
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    gap: 5px 8px;
+    width: 100%;
+    margin: 0;
+    align-items: center;
+  }
+
+  /* From label */
+  .ff-dashboard-filter-group label[for="ff-from-date"] {
+    grid-column: 1 / 4;
+    grid-row: 1;
+  }
+
+  /* To label */
+  .ff-dashboard-filter-group label[for="ff-to-date"] {
+    grid-column: 4 / 7;
+    grid-row: 1;
+  }
+
+  .ff-dashboard-filter-group label {
+    width: auto !important;
+    font-size: 12px !important;
+    line-height: 1.3;
+    margin: 0;
+  }
+
+  /* Two date inputs side by side */
+  .page-content .ff-dashboard-filter-group #ff-from-date {
+    grid-column: 1 / 4;
+    grid-row: 2;
+  }
+
+  .page-content .ff-dashboard-filter-group #ff-to-date {
+    grid-column: 4 / 7;
+    grid-row: 2;
+  }
+
+  .page-content .ff-dashboard-filter-group input[type="date"] {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 38px;
+    min-height: 38px;
+    padding: 5px 7px;
+    font-size: 16px !important;
+    border-radius: 8px;
+  }
+
+  /* Today button */
+  .page-content .ff-dashboard-filter-group button:nth-of-type(1) {
+    grid-column: 1 / 3;
+    grid-row: 3;
+  }
+
+  /* This month button */
+  .page-content .ff-dashboard-filter-group button:nth-of-type(2) {
+    grid-column: 3 / 6;
+    grid-row: 3;
+  }
+
+  /* Refresh button */
+  .page-content .ff-dashboard-filter-group .ff-dashboard-refresh {
+    grid-column: 6 / 7;
+    grid-row: 3;
+    width: 100%;
+    padding: 0;
+  }
+
+  .page-content .ff-dashboard-filter-group button {
+    height: 38px;
+    min-height: 38px;
+    padding: 0 6px;
+    font-size: 13px !important;
+    white-space: nowrap;
+    border-radius: 8px;
+  }
+
+  /* Bring overview closer to the filters */
+  .page-content .ff-overview-section {
+    margin-top: 12px !important;
+  }
+}
