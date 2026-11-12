@@ -773,16 +773,7 @@ function Sidebar({
           })}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-footer-icon">
-            <Settings size={17} />
-          </div>
-
-          <div>
-            <strong>Fabricle Flow</strong>
-            <small>Knitting job-work ERP</small>
-          </div>
-        </div>
+       
       </aside>
     </>
   );
