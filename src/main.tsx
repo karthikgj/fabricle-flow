@@ -1,3 +1,4 @@
+
 import DashboardStockSummary from "./components/DashboardStockSummary";
 import DashboardCharts from "./components/DashboardCharts";
 import React, { useEffect, useState } from "react";
@@ -15,6 +16,7 @@ import {
   ArrowRight,
   BarChart3,
   Boxes,
+  CalendarDays,
   ChevronDown,
   ChevronRight,
   ClipboardList,
@@ -38,9 +40,11 @@ import "./styles.css";
 import "./dashboard-ui.css";
 import "./mobile-zoom-safe.css";
 import "./dashboard-mobile-cards.css";
+
 import { AuthProvider, useAuthContext } from "./hooks/AuthContext";
 import AuthGate from "./components/layout/AuthGate";
 import { useCompany } from "./hooks/useCompany";
+
 import Parties from "./pages/Parties";
 import Items from "./pages/Items";
 import Units from "./pages/Units";
@@ -110,14 +114,15 @@ const navigation: NavItem[] = [
     name: "Production",
     path: "/production",
     icon: Factory,
-    description: "Record production, calculate yarn consumption and update fabric stock",
+    description:
+      "Record production, calculate yarn consumption and update fabric stock",
   },
   {
-  name: "Delivery",
-  path: "/delivery",
-  icon: Truck,
-  description: "Manage yarn deliveries, fabric deliveries and challans",
-},
+    name: "Delivery",
+    path: "/delivery",
+    icon: Truck,
+    description: "Manage yarn deliveries, fabric deliveries and challans",
+  },
   {
     name: "Invoices",
     path: "/invoices",
@@ -134,7 +139,7 @@ const navigation: NavItem[] = [
     name: "Reports",
     path: "/reports",
     icon: BarChart3,
-    description: "Review stock, production, deliveries and outstanding balances", 
+    description: "Review stock, production, deliveries and outstanding balances",
   },
   {
     name: "Settings",
@@ -173,67 +178,113 @@ function PageHeader({
 
 function Dashboard() {
   const today = formatDate(new Date());
+
   const [fromDate, setFromDate] = useState(today);
   const [toDate, setToDate] = useState(today);
   const [stockRefreshKey, setStockRefreshKey] = useState(0);
+
+  // Controls the expandable date range on mobile only.
+  const [showMobileDates, setShowMobileDates] = useState(false);
+
   const { company } = useCompany();
-  const [activityCounts, setActivityCounts] = useState<Record<string, number>>({});
-  const [activityErrors, setActivityErrors] = useState<Record<string, boolean>>({});
+
+  const [activityCounts, setActivityCounts] = useState<
+    Record<string, number>
+  >({});
+
+  const [activityErrors, setActivityErrors] = useState<
+    Record<string, boolean>
+  >({});
+
   const [activityLoading, setActivityLoading] = useState(false);
 
   useEffect(() => {
     if (!company?.id) {
       setActivityCounts({});
       setActivityErrors({});
+      setActivityLoading(false);
       return;
     }
+
     let active = true;
     setActivityLoading(true);
+
     const metrics = [
-      { key: "receipts", table: "goods_receipts", date: "receipt_date" },
-      { key: "production", table: "production_orders", date: "production_date" },
-      { key: "deliveries", table: "deliveries", date: "delivery_date" },
-      { key: "invoices", table: "sales_invoices", date: "invoice_date" },
+      {
+        key: "receipts",
+        table: "goods_receipts",
+        date: "receipt_date",
+      },
+      {
+        key: "production",
+        table: "production_orders",
+        date: "production_date",
+      },
+      {
+        key: "deliveries",
+        table: "deliveries",
+        date: "delivery_date",
+      },
+      {
+        key: "invoices",
+        table: "sales_invoices",
+        date: "invoice_date",
+      },
     ];
 
     const load = async () => {
       const nextCounts: Record<string, number> = {};
       const nextErrors: Record<string, boolean> = {};
-      await Promise.all(metrics.map(async ({ key, table, date }) => {
-        try {
-          // Supabase-js allows dynamically named public tables; the existing
-          // app's company RLS policies still apply to these requests.
-          const { count, error } = await supabase
-            .from(table)
-            .select("id", { count: "exact", head: true })
-            .eq("company_id", company.id)
-            .gte(date, fromDate)
-            .lte(date, toDate);
-          if (error) throw error;
-          nextCounts[key] = count ?? 0;
-        } catch {
-          nextErrors[key] = true;
-        }
-      }));
+
+      await Promise.all(
+        metrics.map(async ({ key, table, date }) => {
+          try {
+            const { count, error } = await supabase
+              .from(table)
+              .select("id", { count: "exact", head: true })
+              .eq("company_id", company.id)
+              .gte(date, fromDate)
+              .lte(date, toDate);
+
+            if (error) throw error;
+
+            nextCounts[key] = count ?? 0;
+          } catch {
+            nextErrors[key] = true;
+          }
+        })
+      );
+
       if (active) {
         setActivityCounts(nextCounts);
         setActivityErrors(nextErrors);
         setActivityLoading(false);
       }
     };
+
     void load();
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+    };
   }, [company?.id, fromDate, toDate, stockRefreshKey]);
 
   function setToday() {
     const date = formatDate(new Date());
+
     setFromDate(date);
     setToDate(date);
   }
 
   function setThisMonth() {
     const now = new Date();
-    setFromDate(formatDate(new Date(now.getFullYear(), now.getMonth(), 1)));
+
+    setFromDate(
+      formatDate(
+        new Date(now.getFullYear(), now.getMonth(), 1)
+      )
+    );
+
     setToDate(formatDate(now));
   }
 
@@ -243,41 +294,118 @@ function Dashboard() {
 
   return (
     <>
-      <div className="ff-dashboard-tools" aria-label="Dashboard filters">
-        <div className="ff-dashboard-tools-label">Overview</div>
+      {/* Mobile-only heading above the filters */}
+      <div className="ff-mobile-overview-heading">
+        <div>
+          <h2>Business Overview</h2>
+          <p>Your inventory at a glance</p>
+        </div>
+
+        <button
+          type="button"
+          className="ff-mobile-overview-refresh"
+          onClick={refreshDashboard}
+          aria-label="Refresh dashboard"
+          title="Refresh dashboard"
+        >
+          <RefreshCw size={17} />
+        </button>
+      </div>
+
+      {/* Compact dashboard date filters */}
+      <div
+        className={`ff-dashboard-tools ${
+          showMobileDates ? "ff-dates-open" : ""
+        }`}
+        aria-label="Dashboard filters"
+      >
+        <div className="ff-dashboard-tools-label">
+          Overview
+        </div>
+
         <div className="ff-dashboard-filter-group">
-          <label htmlFor="ff-from-date">From</label>
+          <label htmlFor="ff-from-date">
+            From
+          </label>
+
           <input
             id="ff-from-date"
             type="date"
             value={fromDate}
             max={toDate}
-            onChange={(event) => setFromDate(event.target.value)}
+            onChange={(event) =>
+              setFromDate(event.target.value)
+            }
           />
-          <label htmlFor="ff-to-date">To</label>
+
+          <label htmlFor="ff-to-date">
+            To
+          </label>
+
           <input
             id="ff-to-date"
             type="date"
             value={toDate}
             min={fromDate}
-            onChange={(event) => setToDate(event.target.value)}
+            onChange={(event) =>
+              setToDate(event.target.value)
+            }
           />
-          <button type="button" onClick={setToday}>Today</button>
-          <button type="button" onClick={setThisMonth}>This month</button>
-          <button type="button" className="ff-dashboard-refresh" onClick={refreshDashboard} aria-label="Refresh dashboard stock" title="Refresh dashboard stock">
+
+          <button
+            type="button"
+            onClick={setToday}
+          >
+            Today
+          </button>
+
+          <button
+            type="button"
+            onClick={setThisMonth}
+          >
+            This month
+          </button>
+
+          {/* Visible on mobile; expands custom dates */}
+          <button
+            type="button"
+            className="ff-mobile-dates-toggle"
+            aria-expanded={showMobileDates}
+            aria-controls="ff-from-date ff-to-date"
+            onClick={() =>
+              setShowMobileDates((open) => !open)
+            }
+          >
+            <CalendarDays size={15} />
+            Dates
+          </button>
+
+          {/* Desktop refresh; mobile uses heading refresh */}
+          <button
+            type="button"
+            className="ff-dashboard-refresh"
+            onClick={refreshDashboard}
+            aria-label="Refresh dashboard stock"
+            title="Refresh dashboard stock"
+          >
             <RefreshCw size={17} />
           </button>
         </div>
       </div>
 
+      {/* Live KPI cards */}
       <DashboardStockSummary key={stockRefreshKey} />
 
+      {/* Activity section */}
       <section className="dashboard-section">
         <div className="section-title-row">
           <div>
             <h2>Activity</h2>
-            <p>Transactions for the selected date range.</p>
+            <p>
+              Transactions for the selected date range.
+            </p>
           </div>
+
           <span className="date-range-label">
             {fromDate} — {toDate}
           </span>
@@ -293,6 +421,7 @@ function Dashboard() {
             icon={ArrowDownToLine}
             path="/inventory/receipts"
           />
+
           <ActivityCard
             count={activityCounts.production}
             loading={activityLoading}
@@ -302,6 +431,7 @@ function Dashboard() {
             icon={Factory}
             path="/production"
           />
+
           <ActivityCard
             count={activityCounts.deliveries}
             loading={activityLoading}
@@ -311,6 +441,7 @@ function Dashboard() {
             icon={Truck}
             path="/delivery"
           />
+
           <ActivityCard
             count={activityCounts.invoices}
             loading={activityLoading}
@@ -323,8 +454,8 @@ function Dashboard() {
         </div>
       </section>
 
+      {/* Live business analytics */}
       <DashboardCharts refreshKey={stockRefreshKey} />
-
     </>
   );
 }
@@ -352,18 +483,32 @@ function ActivityCard({
         <div className="activity-icon">
           <Icon size={19} />
         </div>
-        <ArrowRight size={16} className="activity-arrow" />
+
+        <ArrowRight
+          size={16}
+          className="activity-arrow"
+        />
       </div>
+
       <strong>{title}</strong>
       <span>{description}</span>
+
       <div className="activity-empty">
-        {loading ? "Loading…" : error ? "Count unavailable" : `${count ?? 0} records in period`}
+        {loading
+          ? "Loading…"
+          : error
+            ? "Count unavailable"
+            : `${count ?? 0} records in period`}
       </div>
     </Link>
   );
 }
 
-function ModulePage({ module }: { module: NavItem }) {
+function ModulePage({
+  module,
+}: {
+  module: NavItem;
+}) {
   const [search, setSearch] = useState("");
   const Icon = module.icon;
 
@@ -373,14 +518,21 @@ function ModulePage({ module }: { module: NavItem }) {
 
   return (
     <>
-      <PageHeader title={module.name} subtitle={module.description} />
+      <PageHeader
+        title={module.name}
+        subtitle={module.description}
+      />
 
       <section className="module-intro panel">
         <div className="module-intro-icon">
           <Icon size={25} />
         </div>
+
         <div>
-          <span className="eyebrow">FABRICLE FLOW WORKSPACE</span>
+          <span className="eyebrow">
+            FABRICLE FLOW WORKSPACE
+          </span>
+
           <h2>{module.name}</h2>
           <p>{module.description}.</p>
         </div>
@@ -399,7 +551,9 @@ function ModulePage({ module }: { module: NavItem }) {
                 aria-label={`Search ${module.name} pages`}
                 placeholder="Find a page..."
                 value={search}
-                onChange={(event) => setSearch(event.target.value)}
+                onChange={(event) =>
+                  setSearch(event.target.value)
+                }
               />
             </div>
           </div>
@@ -414,16 +568,22 @@ function ModulePage({ module }: { module: NavItem }) {
                 <div className="page-link-icon">
                   <FileCheck size={19} />
                 </div>
+
                 <div>
                   <strong>{child.name}</strong>
-                  <span>Open {child.name.toLowerCase()}</span>
+                  <span>
+                    Open {child.name.toLowerCase()}
+                  </span>
                 </div>
+
                 <ChevronRight size={18} />
               </Link>
             ))}
 
             {children?.length === 0 && (
-              <div className="empty-state">No pages match your search.</div>
+              <div className="empty-state">
+                No pages match your search.
+              </div>
             )}
           </div>
         </section>
@@ -433,13 +593,23 @@ function ModulePage({ module }: { module: NavItem }) {
         <div className="empty-state-icon">
           <ClipboardList size={25} />
         </div>
-        <h3>{module.name} screens will be connected here</h3>
+
+        <h3>
+          {module.name} screens will be connected here
+        </h3>
+
         <p>
-          The navigation is ready, but the business forms, validations,
-          permissions and database operations still need to be implemented.
+          The navigation is ready, but the business forms,
+          validations, permissions and database operations
+          still need to be implemented.
         </p>
-        <Link to="/" className="button button-outline">
-          Back to Dashboard <ArrowRight size={15} />
+
+        <Link
+          to="/"
+          className="button button-outline"
+        >
+          Back to Dashboard
+          <ArrowRight size={15} />
         </Link>
       </section>
     </>
@@ -454,7 +624,11 @@ function Sidebar({
   closeMobile: () => void;
 }) {
   const location = useLocation();
-  const [expanded, setExpanded] = useState<string[]>(["Masters", "Inventory"]);
+
+  const [expanded, setExpanded] = useState<string[]>([
+    "Masters",
+    "Inventory",
+  ]);
 
   function toggleSection(name: string) {
     setExpanded((current) =>
@@ -474,17 +648,28 @@ function Sidebar({
         />
       )}
 
-      <aside className={`sidebar ${mobileOpen ? "sidebar-open" : ""}`}>
+      <aside
+        className={`sidebar ${
+          mobileOpen ? "sidebar-open" : ""
+        }`}
+      >
         <div className="brand-area">
-          <Link to="/" className="brand-link" onClick={closeMobile}>
+          <Link
+            to="/"
+            className="brand-link"
+            onClick={closeMobile}
+          >
             <img
               className="brand-logo"
               src="/logo.svg"
               alt="Fabricle Flow logo"
             />
+
             <span className="brand-text">
               <strong>Fabricle Flow</strong>
-              <small>Inventory &amp; Production</small>
+              <small>
+                Inventory &amp; Production
+              </small>
             </span>
           </Link>
 
@@ -497,41 +682,67 @@ function Sidebar({
           </button>
         </div>
 
-        <div className="sidebar-label">WORKSPACE</div>
+        <div className="sidebar-label">
+          WORKSPACE
+        </div>
 
-        <nav className="sidebar-nav" aria-label="Main navigation">
+        <nav
+          className="sidebar-nav"
+          aria-label="Main navigation"
+        >
           {navigation.map((item) => {
             const Icon = item.icon;
+
             const active =
               item.path === "/"
                 ? location.pathname === "/"
                 : location.pathname === item.path ||
-                  location.pathname.startsWith(`${item.path}/`);
+                  location.pathname.startsWith(
+                    `${item.path}/`
+                  );
 
-            const isExpanded = expanded.includes(item.name);
+            const isExpanded = expanded.includes(
+              item.name
+            );
 
             return (
-              <div className="nav-group" key={item.path}>
+              <div
+                className="nav-group"
+                key={item.path}
+              >
                 {item.children ? (
                   <button
                     type="button"
-                    className={`nav-item ${active ? "active" : ""}`}
-                    onClick={() => toggleSection(item.name)}
+                    className={`nav-item ${
+                      active ? "active" : ""
+                    }`}
+                    onClick={() =>
+                      toggleSection(item.name)
+                    }
                     aria-expanded={isExpanded}
                   >
                     <Icon size={18} />
                     <span>{item.name}</span>
+
                     {isExpanded ? (
-                      <ChevronDown className="nav-chevron" size={15} />
+                      <ChevronDown
+                        className="nav-chevron"
+                        size={15}
+                      />
                     ) : (
-                      <ChevronRight className="nav-chevron" size={15} />
+                      <ChevronRight
+                        className="nav-chevron"
+                        size={15}
+                      />
                     )}
                   </button>
                 ) : (
                   <Link
                     to={item.path}
                     onClick={closeMobile}
-                    className={`nav-item ${active ? "active" : ""}`}
+                    className={`nav-item ${
+                      active ? "active" : ""
+                    }`}
                   >
                     <Icon size={18} />
                     <span>{item.name}</span>
@@ -546,7 +757,9 @@ function Sidebar({
                         key={child.path}
                         onClick={closeMobile}
                         className={`nav-child ${
-                          location.pathname === child.path ? "active" : ""
+                          location.pathname === child.path
+                            ? "active"
+                            : ""
                         }`}
                       >
                         <span className="nav-child-dot" />
@@ -564,6 +777,7 @@ function Sidebar({
           <div className="sidebar-footer-icon">
             <Settings size={17} />
           </div>
+
           <div>
             <strong>Fabricle Flow</strong>
             <small>Knitting job-work ERP</small>
@@ -575,7 +789,10 @@ function Sidebar({
 }
 
 function titleForPath(pathname: string): string {
-  if (pathname === "/") return "Dashboard";
+  if (pathname === "/") {
+    return "Dashboard";
+  }
+
   const exact: Record<string, string> = {
     "/masters/parties": "Parties",
     "/masters/items": "Items",
@@ -598,12 +815,28 @@ function titleForPath(pathname: string): string {
     "/reports": "Reports",
     "/settings": "Settings",
   };
-  if (exact[pathname]) return exact[pathname];
-  if (pathname.startsWith("/reports/")) {
-    const leaf = pathname.split("/").filter(Boolean).pop() ?? "Reports";
-    return leaf.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+  if (exact[pathname]) {
+    return exact[pathname];
   }
-  return navigation.find((item) => pathname.startsWith(item.path + "/"))?.name ?? "Workspace";
+
+  if (pathname.startsWith("/reports/")) {
+    const leaf =
+      pathname.split("/").filter(Boolean).pop() ??
+      "Reports";
+
+    return leaf
+      .replace(/-/g, " ")
+      .replace(/\b\w/g, (letter) =>
+        letter.toUpperCase()
+      );
+  }
+
+  return (
+    navigation.find((item) =>
+      pathname.startsWith(item.path + "/")
+    )?.name ?? "Workspace"
+  );
 }
 
 function AppLayout() {
@@ -613,14 +846,24 @@ function AppLayout() {
   const [signOutError, setSignOutError] = useState("");
 
   const location = useLocation();
-  const { company, loading: companyLoading } = useCompany();
-  const { user, signOut } = useAuthContext();
+
+  const {
+    company,
+    loading: companyLoading,
+  } = useCompany();
+
+  const {
+    user,
+    signOut,
+  } = useAuthContext();
 
   const activeModule = navigation.find((item) =>
     item.path === "/"
       ? location.pathname === "/"
       : location.pathname === item.path ||
-        location.pathname.startsWith(`${item.path}/`)
+        location.pathname.startsWith(
+          `${item.path}/`
+        )
   );
 
   async function handleSignOut() {
@@ -645,7 +888,9 @@ function AppLayout() {
     <div className="app-shell">
       <Sidebar
         mobileOpen={mobileOpen}
-        closeMobile={() => setMobileOpen(false)}
+        closeMobile={() =>
+          setMobileOpen(false)
+        }
       />
 
       <div className="main-area">
@@ -654,19 +899,37 @@ function AppLayout() {
             type="button"
             className="mobile-menu-button"
             aria-label="Open navigation"
-            onClick={() => setMobileOpen(true)}
+            onClick={() =>
+              setMobileOpen(true)
+            }
           >
             <Menu size={21} />
           </button>
 
           <div className="topbar-context ff-topbar-heading">
-            <span className="topbar-context-icon" aria-hidden="true">
-              {activeModule ? React.createElement(activeModule.icon, { size: 18 }) : <LayoutDashboard size={18} />}
+            <span
+              className="topbar-context-icon"
+              aria-hidden="true"
+            >
+              {activeModule ? (
+                React.createElement(
+                  activeModule.icon,
+                  { size: 18 }
+                )
+              ) : (
+                <LayoutDashboard size={18} />
+              )}
             </span>
+
             <div className="ff-topbar-title-group">
-              <strong className="ff-topbar-title">{titleForPath(location.pathname)}</strong>
+              <strong className="ff-topbar-title">
+                {titleForPath(location.pathname)}
+              </strong>
+
               {!companyLoading && company?.name && (
-                <span className="ff-topbar-company">{company.name}</span>
+                <span className="ff-topbar-company">
+                  {company.name}
+                </span>
               )}
             </div>
           </div>
@@ -679,9 +942,13 @@ function AppLayout() {
                 title={`${company.name} organisation settings`}
                 aria-label={`${company.name} organisation settings`}
               >
-                <img src={company.logo_url} alt={`${company.name} logo`} />
+                <img
+                  src={company.logo_url}
+                  alt={`${company.name} logo`}
+                />
               </Link>
             )}
+
             <div className="user-menu">
               <button
                 type="button"
@@ -689,20 +956,30 @@ function AppLayout() {
                 title={user?.email ?? "Account"}
                 aria-label="Open account menu"
                 aria-expanded={userMenuOpen}
-                onClick={() => setUserMenuOpen((open) => !open)}
+                onClick={() =>
+                  setUserMenuOpen((open) => !open)
+                }
               >
-                {(user?.email?.charAt(0) || "U").toUpperCase()}
+                {(
+                  user?.email?.charAt(0) ||
+                  "U"
+                ).toUpperCase()}
               </button>
 
               {userMenuOpen && (
                 <div className="user-menu-panel">
                   <strong>
-                    {user?.user_metadata?.full_name || "Your account"}
+                    {user?.user_metadata?.full_name ||
+                      "Your account"}
                   </strong>
+
                   <span>{user?.email}</span>
 
                   {signOutError && (
-                    <p className="auth-message" role="alert">
+                    <p
+                      className="auth-message"
+                      role="alert"
+                    >
                       {signOutError}
                     </p>
                   )}
@@ -711,10 +988,15 @@ function AppLayout() {
                     type="button"
                     className="user-menu-signout"
                     disabled={signingOut}
-                    onClick={() => void handleSignOut()}
+                    onClick={() =>
+                      void handleSignOut()
+                    }
                   >
                     <LogOut size={16} />
-                    {signingOut ? "Signing out..." : "Sign out"}
+
+                    {signingOut
+                      ? "Signing out..."
+                      : "Sign out"}
                   </button>
                 </div>
               )}
@@ -724,47 +1006,142 @@ function AppLayout() {
 
         <main className="page-content">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route
+              path="/"
+              element={<Dashboard />}
+            />
 
-            {/* Implemented master and inventory pages */}
-            <Route path="/masters/parties" element={<Parties />} />
-            <Route path="/masters/items" element={<Items />} />
-            <Route path="/masters/units" element={<Units />} />
-            <Route path="/masters/locations" element={<Locations />} />
-            <Route path="/masters/lots" element={<Lots />} />
-            <Route path="/masters/boms" element={<BOMs />} />
-            <Route path="/inventory/receipts" element={<GRNs />} />
-            <Route path="/inventory/stock" element={<CurrentStock />} />
-            <Route path="/inventory/adjustments" element={<StockAdjustments />} />
-            <Route path="/inventory/ledger" element={<StockLedger />} />
-            <Route path="/inventory/fabric-stock" element={<FabricStock />} />
-            <Route path="/production" element={<Production />} />
-            <Route path="/delivery" element={<Delivery />} />
-            <Route path="/delivery/yarn" element={<Delivery />} />
-            <Route path="/delivery" element={<Delivery />} />
-            <Route path="/delivery/challans" element={<Delivery />} />
-            <Route path="/invoices" element={<Invoices />} />
-            <Route path="/payments" element={<Payments />} />
-            <Route path="/reports/*" element={<Reports />} />
-            <Route path="/settings" element={<OrganisationSettings />} />
+            {/* Masters */}
+            <Route
+              path="/masters/parties"
+              element={<Parties />}
+            />
 
-            
-{navigation
-  .filter(
-    (item) => item.path !== "/" && item.path !== "/reports" && item.path !== "/settings" && item.path !== "/delivery"
-  )
-  .map((item) => (
-    <Route
-      key={item.path}
-      path={item.path}
-      element={<ModulePage module={item} />}
-    />
-  ))}
+            <Route
+              path="/masters/items"
+              element={<Items />}
+            />
 
+            <Route
+              path="/masters/units"
+              element={<Units />}
+            />
 
+            <Route
+              path="/masters/locations"
+              element={<Locations />}
+            />
+
+            <Route
+              path="/masters/lots"
+              element={<Lots />}
+            />
+
+            <Route
+              path="/masters/boms"
+              element={<BOMs />}
+            />
+
+            {/* Inventory */}
+            <Route
+              path="/inventory/receipts"
+              element={<GRNs />}
+            />
+
+            <Route
+              path="/inventory/stock"
+              element={<CurrentStock />}
+            />
+
+            <Route
+              path="/inventory/adjustments"
+              element={<StockAdjustments />}
+            />
+
+            <Route
+              path="/inventory/ledger"
+              element={<StockLedger />}
+            />
+
+            <Route
+              path="/inventory/fabric-stock"
+              element={<FabricStock />}
+            />
+
+            {/* Business operations */}
+            <Route
+              path="/production"
+              element={<Production />}
+            />
+
+            <Route
+              path="/delivery"
+              element={<Delivery />}
+            />
+
+            <Route
+              path="/delivery/yarn"
+              element={<Delivery />}
+            />
+
+            <Route
+              path="/delivery/fabric"
+              element={<Delivery />}
+            />
+
+            <Route
+              path="/delivery/challans"
+              element={<Delivery />}
+            />
+
+            <Route
+              path="/invoices"
+              element={<Invoices />}
+            />
+
+            <Route
+              path="/payments"
+              element={<Payments />}
+            />
+
+            {/* Reports and settings */}
+            <Route
+              path="/reports/*"
+              element={<Reports />}
+            />
+
+            <Route
+              path="/settings"
+              element={<OrganisationSettings />}
+            />
+
+            {/* Section landing pages */}
+            {navigation
+              .filter(
+                (item) =>
+                  item.path !== "/" &&
+                  item.path !== "/reports" &&
+                  item.path !== "/settings" &&
+                  item.path !== "/delivery"
+              )
+              .map((item) => (
+                <Route
+                  key={item.path}
+                  path={item.path}
+                  element={
+                    <ModulePage module={item} />
+                  }
+                />
+              ))}
+
+            {/* Fallback child pages */}
             {navigation.flatMap((item) =>
               (item.children ?? [])
-                .filter((child) => child.path !== "/inventory/receipts")
+                .filter(
+                  (child) =>
+                    child.path !==
+                    "/inventory/receipts"
+                )
                 .map((child) => (
                   <Route
                     key={child.path}
@@ -775,7 +1152,8 @@ function AppLayout() {
                           name: child.name,
                           path: child.path,
                           icon: item.icon,
-                          description: `${child.name} for knitting job-work operations`,
+                          description:
+                            `${child.name} for knitting job-work operations`,
                         }}
                       />
                     }
@@ -783,11 +1161,18 @@ function AppLayout() {
                 ))
             )}
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route
+              path="*"
+              element={
+                <Navigate
+                  to="/"
+                  replace
+                />
+              }
+            />
           </Routes>
 
-          <footer className="app-footer">
-          </footer>
+          <footer className="app-footer" />
         </main>
       </div>
     </div>
@@ -802,7 +1187,9 @@ function AuthenticatedApp() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
+createRoot(
+  document.getElementById("root")!
+).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
