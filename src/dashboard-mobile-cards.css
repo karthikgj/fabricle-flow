@@ -1,0 +1,162 @@
+/* Fabricle Flow – Dashboard card refinement
+   Import AFTER mobile-zoom-safe.css. Purely visual: no data, routes or functionality changed.
+*/
+
+@media screen {
+  /* Gentle depth and very light tint on normal desktop and tablet screens too. */
+  .page-content .ff-overview-card {
+    background: linear-gradient(145deg, #ffffff 8%, #f7faff 100%);
+    border: 1px solid #e4eaf3;
+    border-radius: 14px;
+    box-shadow: 0 3px 11px rgba(32, 56, 90, 0.045),
+                0 1px 2px rgba(32, 56, 90, 0.035);
+    transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+  }
+  .page-content .activity-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+    border: 1px solid #e4eaf3;
+    border-radius: 14px;
+    box-shadow: 0 3px 11px rgba(32, 56, 90, 0.045),
+                0 1px 2px rgba(32, 56, 90, 0.035);
+    transition: box-shadow .18s ease, border-color .18s ease, transform .18s ease;
+    text-decoration: none;
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .page-content .ff-overview-card:hover,
+    .page-content .activity-card:hover {
+      border-color: #cbd9ed;
+      box-shadow: 0 8px 23px rgba(31, 59, 104, 0.10);
+      transform: translateY(-2px);
+    }
+  }
+}
+
+/* Normal mobile phones: compact, two-up cards rather than five tall full-width rows. */
+@media screen and (min-width: 370px) and (max-width: 600px) {
+  .page-content .ff-overview-grid,
+  .page-content .activity-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    width: 100%;
+    align-items: stretch;
+    gap: 10px !important;
+  }
+}
+
+@media screen and (max-width: 600px) {
+  /* Headings and section spacing */
+  .page-content .ff-overview-section,
+  .page-content .dashboard-section:has(> .activity-grid) {
+    margin-top: 18px !important;
+  }
+  .page-content .ff-overview-heading,
+  .page-content .dashboard-section:has(> .activity-grid) .section-title-row {
+    margin-bottom: 11px;
+  }
+
+  /* Overview cards */
+  .page-content .ff-overview-card {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    padding: 13px 12px !important;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 9px;
+  }
+  .page-content .ff-overview-icon {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+  }
+  .page-content .ff-overview-icon svg { width: 18px; height: 18px; }
+  .page-content .ff-overview-card-body { gap: 4px; width: 100%; }
+  .page-content .ff-overview-card-title {
+    font-size: 13px !important;
+    font-weight: 650;
+    line-height: 1.3;
+  }
+  .page-content .ff-overview-value {
+    font-size: clamp(20px, 5.3vw, 25px) !important;
+    line-height: 1.15;
+    overflow-wrap: anywhere;
+  }
+  .page-content .ff-overview-note {
+    font-size: 11px !important;
+    line-height: 1.35;
+  }
+  .page-content .ff-overview-card-arrow {
+    right: 12px;
+    top: 13px;
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Activity cards */
+  .page-content .activity-card {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 148px;
+    padding: 13px 12px !important;
+    gap: 0;
+  }
+  .page-content .activity-card-top { margin-bottom: 10px; }
+  .page-content .activity-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: #f3f7fd;
+    color: #57769f;
+    border-color: #e5ebf5;
+  }
+  .page-content .activity-icon svg { width: 18px; height: 18px; }
+  .page-content .activity-card > strong {
+    font-size: 13px !important;
+    line-height: 1.3;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+  }
+  .page-content .activity-card > span {
+    min-height: 0;
+    margin-top: 5px;
+    font-size: 11px !important;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+  }
+  .page-content .activity-empty {
+    margin-top: auto;
+    padding-top: 10px;
+    font-size: 11px;
+    line-height: 1.3;
+  }
+
+  /* Subtle variation while keeping the product palette restrained */
+  .page-content .ff-overview-card:nth-child(2n),
+  .page-content .activity-card:nth-child(2n) {
+    background: linear-gradient(145deg, #ffffff 10%, #f7fafc 100%);
+  }
+}
+
+/* Small mobiles and 200%+ zoom: keep readability, with narrower vertical cards. */
+@media screen and (max-width: 369px) {
+  .page-content .ff-overview-grid,
+  .page-content .activity-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+  }
+  .page-content .ff-overview-card {
+    flex-direction: row;
+    align-items: center;
+    padding: 12px 13px !important;
+  }
+  .page-content .ff-overview-value { font-size: 22px !important; }
+  .page-content .activity-card { min-height: 125px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-content .ff-overview-card,
+  .page-content .activity-card { transition: none; }
+}
