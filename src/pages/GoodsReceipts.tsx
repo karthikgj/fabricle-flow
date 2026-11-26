@@ -607,6 +607,64 @@ export default function GoodsReceipts() {
   }
 
 
+async function deleteReceipt(receipt: Receipt) {
+  if (!company?.id || saving) return;
+
+  const isPosted = receipt.status === "posted";
+
+  const confirmed = window.confirm(
+    isPosted
+      ? `Delete posted ${receipt.document_no}?\n\n` +
+        "The received stock will be reversed.\n" +
+        "Deletion will be blocked if stock becomes negative.\n\n" +
+        "Continue?"
+      : `Permanently delete draft ${receipt.document_no}?\n\n` +
+        "No stock quantities will change.\n\n" +
+        "Continue?"
+  );
+
+  if (!confirmed) return;
+
+  setSaving(true);
+  setError("");
+  setNotice("");
+
+  try {
+    const { data, error: deleteError } = await supabase.rpc(
+      "delete_goods_receipt",
+      {
+        p_company_id: company.id,
+        p_receipt_id: receipt.id,
+      }
+    );
+
+    if (deleteError) throw deleteError;
+
+    if (data === "deleted") {
+      setNotice(`${receipt.document_no} deleted successfully.`);
+    } else if (data === "reversed") {
+      setNotice(
+        `${receipt.document_no} cancelled. Stock reversed successfully.`
+      );
+    } else {
+      throw new Error("Unexpected deletion response.");
+    }
+
+    setCurrentPage(1);
+    await loadData();
+  } catch (error) {
+    setError(
+      error instanceof Error
+        ? error.message
+        : "Unable to delete goods receipt."
+    );
+  } finally {
+    setSaving(false);
+  }
+}
+
+
+
   async function printReceipt(receipt: Receipt) {
     if (!company?.id) return;
 
@@ -1244,6 +1302,22 @@ export default function GoodsReceipts() {
                               Posted {r.posted_at ? formatDateTime(r.posted_at) : ""}
                             </span>
                           )}
+
+                          {(r.status === "draft" || r.status === "posted") && (
+  <button
+    type="button"
+    className="secondary-button"
+    style={{
+      color: "#dc2626",
+      borderColor: "#fecaca",
+    }}
+    onClick={() => void deleteReceipt(r)}
+    disabled={saving}
+  >
+    <Trash2 size={14} />
+    Delete
+  </button>
+)}
                         </div>
                       </td>
                     </tr>
