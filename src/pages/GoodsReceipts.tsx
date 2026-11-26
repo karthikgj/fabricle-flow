@@ -590,7 +590,7 @@ export default function GoodsReceipts() {
     try {
       const { error: postError } = await supabase.rpc("post_goods_receipt", {
         p_company_id: company.id,
-        p_goods_receipt_id: receipt.id,
+        p_receipt_id: receipt.id,
       });
 
       if (postError) throw postError;
