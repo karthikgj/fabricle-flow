@@ -380,7 +380,7 @@ export default function GoodsReceipts() {
 
     const { data: lineData, error: lineError } = await supabase
       .from("goods_receipt_lines")
-      .select("id, item_id, lot_id, location_id, quantity, notes")
+      .select("id, item_id, lot_id, location_id, quantity")
       .eq("company_id", company?.id)
       .eq("receipt_id", receipt.id)
       .order("created_at");
