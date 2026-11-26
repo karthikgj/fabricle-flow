@@ -380,9 +380,9 @@ export default function GoodsReceipts() {
 
     const { data: lineData, error: lineError } = await supabase
       .from("goods_receipt_lines")
-      .select("id, item_id, lot_id, location_id, quantity, unit_id, notes")
+      .select("id, item_id, lot_id, location_id, quantity, notes")
       .eq("company_id", company?.id)
-      .eq("goods_receipt_id", receipt.id)
+      .eq("receipt_id", receipt.id)
       .order("created_at");
 
     if (lineError) {
@@ -403,8 +403,10 @@ export default function GoodsReceipts() {
       lot_id: line.lot_id ?? "",
       location_id: line.location_id ?? "",
       quantity: String(line.quantity),
-      unit_id: line.unit_id,
-      notes: line.notes ?? "",
+      unit_id: items.find(
+  (item) => item.id === line.item_id
+)?.unit_id ?? "",
+      notes: "",
     })));
 
     setAttachmentFiles([]);
@@ -413,7 +415,7 @@ export default function GoodsReceipts() {
       .from("goods_receipt_attachments")
       .select("*")
       .eq("company_id", company?.id)
-      .eq("goods_receipt_id", receipt.id)
+      .eq("receipt_id", receipt.id)
       .order("created_at");
 
     if (attachmentError) {
@@ -610,9 +612,9 @@ export default function GoodsReceipts() {
 
     const { data: lineData, error: lineError } = await supabase
       .from("goods_receipt_lines")
-      .select("id, item_id, lot_id, location_id, quantity, unit_id, notes")
+      .select("id, item_id, lot_id, location_id, quantity")
       .eq("company_id", company.id)
-      .eq("goods_receipt_id", receipt.id)
+      .eq("receipt_id", receipt.id)
       .order("created_at");
 
     if (lineError) {
@@ -626,8 +628,9 @@ export default function GoodsReceipts() {
       const item = items.find((entry) => entry.id === line.item_id);
       const lot = lots.find((entry) => entry.id === line.lot_id);
       const location = locations.find((entry) => entry.id === line.location_id);
-      const unit = units.find((entry) => entry.id === line.unit_id);
-
+      const unit = units.find(
+  (entry) => entry.id === item?.unit_id
+);
       return `
         <tr>
           <td>${index + 1}</td>
@@ -736,7 +739,7 @@ export default function GoodsReceipts() {
       .from("goods_receipt_attachments")
       .select("*")
       .eq("company_id", company.id)
-      .eq("goods_receipt_id", receipt.id)
+      .eq("receipt_id", receipt.id)
       .order("created_at");
 
     if (attachmentError) {
