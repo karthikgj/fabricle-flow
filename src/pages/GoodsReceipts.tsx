@@ -525,7 +525,7 @@ export default function GoodsReceipts() {
 
       const payload = {
         p_company_id: company.id,
-        p_goods_receipt_id: selected?.id ?? null,
+        p_receipt_id: selected?.id ?? null,
         p_document_no: documentNo,
         p_vendor_document_no: vendorDocumentNo.trim() || null,
         p_supplier_id: supplierId,
